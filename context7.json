@@ -1,0 +1,33 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Tolgee documentation",
+  "description": "Documentation for the Tolgee localization platform, the Tolgee CLI and the JavaScript, Android (Kotlin) and iOS SDKs, including task recipes written for AI coding agents.",
+  "folders": ["android-sdk", "platform", "tolgee-cli", "js-sdk", "ios-sdk"],
+  "excludeFolders": [
+    "api",
+    "apiSpecGeneration",
+    "js-sdk_versioned_docs",
+    "platform_versioned_docs",
+    "tolgee-cli_versioned_docs",
+    "js-sdk_versioned_sidebars",
+    "platform_versioned_sidebars",
+    "tolgee-cli_versioned_sidebars",
+    "docs",
+    "src",
+    "static",
+    "scripts",
+    "plugins",
+    "node_modules",
+    "build"
+  ],
+  "excludeFiles": ["LLM_DOCS_RESEARCH.md", "README.md", "redirects.js"],
+  "rules": [
+    "Android SDK: the Maven group is io.tolgee.mobile-kotlin-sdk with artifacts core and compose; initialize once with Tolgee.init { contentDelivery { url = ... } } in Application.onCreate().",
+    "Android SDK: the Content Delivery must use the 'Android SDK' (JSON) format; the SDK does not parse strings.xml from the CDN.",
+    "Android SDK: Compose helpers stringResource / pluralStringResource / stringArrayResource are imported from package io.tolgee, replacing androidx.compose.ui.res.",
+    "Android SDK: keys are Android resource entry names; keep strings.xml as the fallback and push it with the Tolgee CLI (format ANDROID_XML).",
+    "Prefer the task recipes under android-sdk/agents for install and migration work; the Markdown index of all pages is https://docs.tolgee.io/llms.txt.",
+    "The Tolgee MCP server (https://app.tolgee.io/mcp/developer, header X-API-Key) can list projects, keys and translations and create or translate keys; never commit the API key."
+  ],
+  "previousVersions": []
+}

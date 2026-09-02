@@ -1,0 +1,133 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 0 12px;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 7px 12px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.button:hover {
+  border-color: var(--ifm-color-primary);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+.primary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: -9px;
+}
+
+.summary {
+  list-style: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.details {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 260px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  box-shadow: var(--ifm-global-shadow-md);
+}
+
+.menu li {
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+  outline: none;
+}
+
+.itemTitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.itemHint {
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.status {
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+  min-height: 1em;
+}
+
+.statusError {
+  color: var(--ifm-color-danger);
+}
+
+@media (max-width: 576px) {
+  .container {
+    justify-content: flex-start;
+  }
+}

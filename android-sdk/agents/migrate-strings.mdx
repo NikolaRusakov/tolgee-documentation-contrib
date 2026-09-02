@@ -4,6 +4,7 @@ title: "Recipe: migrate resource strings to Tolgee"
 sidebar_label: "Migrate resource strings"
 description: Systematically route every string lookup of an existing Android app (getString, layouts, plurals, arrays, Compose stringResource, non-Activity contexts) through the Tolgee SDK while keeping strings.xml as fallback.
 image: /img/og-images/android-sdk.png
+llm_prompt: "Read {url} and follow the recipe to migrate every resource string lookup in this Android app to the Tolgee SDK, pattern by pattern. Run the inventory commands first, keep strings.xml as fallback, and finish with the Verify section and the list of exceptions."
 keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air, ai agent]
 ---
 
@@ -52,7 +53,9 @@ grep -rn 'translatable="false"' app/src/main/res/values/strings.xml
 
 ### 1. Sync keys with the Tolgee project
 
-Push the current resources so every key exists on the platform before the app starts asking for it:
+Every key must exist on the platform before the app starts asking for it. Two equivalent routes:
+
+**With the Tolgee CLI** (scriptable, keeps `strings.xml` as the source of truth):
 
 ```bash
 npm install --global @tolgee/cli
@@ -60,8 +63,19 @@ tolgee login <project API key>      # never commit this key
 tolgee push                          # uses .tolgeerc with format ANDROID_XML (see Starters)
 ```
 
+**With the Tolgee MCP server** (when the agent has it [connected](./index.mdx#give-the-agent-access-to-your-tolgee-project-mcp)):
+list the project's keys, compare them with the resource names in `res/values/strings.xml`, create only the missing keys
+with their English text, and optionally trigger machine translation for the published locales. Read before writing,
+and confirm before any batch or delete operation.
+
+```text title="Agent prompt for the MCP route"
+Using the Tolgee MCP server: list the keys of project <id>, compare with the <string name="..."> entries in
+app/src/main/res/values/strings.xml, create the missing keys with the English text from the file, and report keys that
+exist in Tolgee but not in the app. Do not delete anything.
+```
+
 Then publish the Content Delivery (format **Android SDK**) or wait for auto-publish. From now on new strings follow
-the same loop: add to `strings.xml` → `tolgee push` → translate on the platform → published over the air.
+the same loop: add to `strings.xml` → push or create through MCP → translate on the platform → published over the air.
 
 ### 2. Route Activity-scoped lookups through the context wrapper (Views)
 
