@@ -5,6 +5,7 @@ import { docs } from './docs';
 import { redirects } from './redirects';
 import { navbar } from './navbar';
 import { footer } from './footer';
+import { llmsTxt } from './llmsTxt';
 import type { Config } from '@docusaurus/types';
 import openApiPluginConfig from './apiSpecGeneration/pluginConfig';
 import tailwindPlugin from './plugins/tailwind-config.cjs';
@@ -86,6 +87,7 @@ const config: Config = {
     openApiPluginConfig,
     ...docs,
     tailwindPlugin,
+    llmsTxt,
   ],
   customFields: {
     googleTrackingId: process.env.DOCUSAURUS_GOOGLE_TRACKING_ID,

@@ -1,0 +1,90 @@
+---
+id: diagnostics
+title: "Diagnostics: investigate SDK behaviour and issues"
+sidebar_label: Diagnostics
+description: A symptom-to-fix table for the Tolgee Android SDK plus a procedure for confirming behaviour against the generated API reference before changing code.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android, troubleshooting, diagnostics, llms-full.txt, dokka, api reference, ai agent]
+---
+
+Use this page when translations do not behave as expected, or before answering a question about what the SDK does.
+It has two parts: a procedure to establish facts from the API reference and the source, and a symptom table.
+
+## Establish facts before changing code
+
+The SDK is small; most questions are answered by reading the relevant type page rather than guessing.
+
+1. **Find the type or member.** Fetch
+   [`https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt).
+   Each line is `[Name](markdown-url): first KDoc sentence`, grouped by module and package. Open the Markdown page of
+   the type; it lists every member with its signature and the platforms it exists on (`[android]`, `[common]`).
+2. **Read everything at once** when the question spans several types (for example "what happens when the CDN is
+   down?"): fetch
+   [`llms-full.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt). Every page starts with a
+   `Source:` line so you can cite it.
+3. **Confirm against source** when KDoc is silent. The reference links to GitHub through "Sources"; the relevant files
+   are `core/src/commonMain/kotlin/io/tolgee/Tolgee.kt` (loading, locale fallback, caching),
+   `core/src/commonMain/kotlin/io/tolgee/api/TolgeeApi.kt` (CDN requests, JSON decoding, persistent cache),
+   `core/src/androidMain/kotlin/io/tolgee/TolgeeAndroid.kt` (resource-id overloads, `preload`, `retranslate`),
+   `core/src/androidMain/kotlin/io/tolgee/TolgeeContextWrapper.kt` and `TolgeeLayoutInflaterFactory.kt`
+   (what the wrapper intercepts), and `compose/src/*/kotlin/io/tolgee/ComposeTolgee*.kt` (Compose helpers).
+4. **Check the binary API of the exact version** in the `.api` dumps
+   ([`core.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/core/api/android/core.api),
+   [`compose.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/compose/api/android/compose.api)),
+   which list every public signature; a member absent there does not exist in the release.
+5. **Reproduce with the demo apps** ([`demo/exampleandroid`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/exampleandroid),
+   [`demo/examplejetpack`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/examplejetpack)) when
+   the behaviour might depend on the host app.
+
+## Facts worth knowing when debugging
+
+- Loading is lazy and asynchronous: `t(...)` returns the fallback until `preload`, `tFlow`, or a Compose helper has
+  loaded the locale. The load path is manifest (`manifest.json`, optional) → resolve locale with BCP 47 fallback →
+  `<tag>.json` from CDN → persistent cache (`TolgeeStorageProviderAndroid`, keyed by version code) → in-memory LRU.
+- Every successful CDN fetch overwrites the cache entry; when the fetch fails, the cache is used; when both fail, the
+  translation is empty and every API returns the bundled resource.
+- `changeFlow` emits after the manifest loads and after each locale load; `ChangeListener.onTranslationsChanged()` is
+  called on the main thread.
+- `setLocale` only updates the locale flow; it does not fetch. Compose helpers and `tFlow` collectors react to it;
+  imperative Views code must call `preload(activity)` and re-bind.
+- `TolgeeContextWrapper.wrap(context)` returns a plain `ContextWrapper` (no interception) when `Tolgee.instance` does
+  not exist yet, so an Activity created before `Tolgee.init` never translates until recreated.
+- The layout inflater factory translates `android:text`, `android:hint` and `android:contentDescription` only for
+  strings without format placeholders and tags the view so `retranslate()` can refresh it.
+- `Formatter.Sprintf` accepts positional arguments only (`TolgeeMessageParams.Indexed`); named arguments
+  (`TolgeeMessageParams.Mapped`) require `Formatter.ICU`.
+- CDN responses are cached at the edge for up to about 15 minutes after publishing.
+
+## Symptom table
+
+| Symptom | Likely cause | Confirm | Fix |
+|---|---|---|---|
+| All texts are the bundled ones | `Tolgee.init` not run before the first screen; CDN prefix wrong; delivery not published | `curl -I <prefix>/en.json` returns 200? Is `MyApplication` registered in the manifest? | Initialize in `Application.onCreate()`; fix prefix; publish the delivery |
+| Bundled text on first frame, translated afterwards | Expected: asynchronous load | `changeFlow` emits shortly after start | Call `preload(activity)` early (`onStart`) or accept the reactive update |
+| Only some texts translate | Non-wrapped context (Application, Service, ViewModel) or a screen created before init | Search for `applicationContext.getString`, `context.getString` outside Activities | Use `getStringT` / `t(context, id)` or wrap that context ([migration step 3](./migrate-strings.mdx#3-convert-lookups-that-run-outside-an-activity)) |
+| Layout text does not change after `setLocale` | No `retranslate`/`recreate` on `changeFlow`, or `preload` not called after switching | Add logging in the `changeFlow` collector | Collect `changeFlow` and call `retranslate(activity)`; Views need `preload` after `setLocale` |
+| `CLEARTEXT communication … not permitted` / SSL handshake error | CDN host not allowed in `network_security.xml` | Manifest references `@xml/network_security`? Domains include `tolgee.io`, `tolg.ee`, custom host? | Add the domain; keep `https` |
+| HTTP 403/404 from the CDN | Wrong prefix, delivery deleted, or a namespaced delivery URL | `curl -I <prefix>/en.json` | Copy the prefix from Developer settings → Content Delivery; use a namespace-less delivery |
+| CDN returns 200 but no translation applies | Delivery format is not "Android SDK" (for example Android XML files) so JSON decoding fails | `curl <prefix>/en.json` returns XML or a non-object | Recreate the delivery with format **Android SDK** |
+| Placeholders shown literally, e.g. `{name}` or `%1$s` | Formatter mismatch between export and SDK | Inspect `en.json`: `{name}`-style means ICU, `%1$s` means Sprintf | Match with `formatter(Tolgee.Formatter.ICU)` or export Android placeholders |
+| Wrong plural form | Quantity not passed as `quantity`, or locale rules differ from bundled `values-xx` | Compare `getQuantityString(id, n, n)` with `tPlural(res, id, n, n)` | Pass the count as `quantity` and repeat as format argument if printed |
+| `IllegalArgumentException: Only indexed or none parameters are supported` | `TolgeeMessageParams.Mapped` with Sprintf | Stack trace in `TranslationSprintf.localized` | Use positional arguments or ICU |
+| Locale switch ignored, falls back to default language | Locale not published or not in `availableLocaleTags`; no manifest | `Tolgee.instance.availableLocaleTags` after `preload` | Publish the locale; list it in `availableLocaleTags` |
+| `en-US` device shows default language instead of `en` | Fallback disabled because no manifest and no `availableLocaleTags` | `availableLocaleTags` is `null` | Provide `availableLocaleTags("en", ...)` so `en-US → en` resolves |
+| Stale text after a release | Persistent cache keyed by `versionCode` unchanged, CDN edge cache | Compare `BuildConfig.VERSION_CODE`; wait 15 min after publishing | Bump the version code; wait for the CDN |
+| Compose: `Unresolved reference` or ambiguity on `stringResource` | Missing or duplicated import | Check imports | Import from `io.tolgee` only |
+| Compose previews or unit tests fail after migration | Test code calls `Tolgee.instance` | `Tolgee.instanceOrNull` is null in tests | Use `instanceOrNull`, or initialize a test instance with `Tolgee.new { … }` and inject it |
+| Crash on start in Java Activities | `attachBaseContext` override missing the `super` call | Stack trace in `attachBaseContext` | `super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))` |
+
+## Reporting an SDK issue
+
+Include: SDK version (from `libs.versions.toml`), Android API level, Views or Compose, the `Tolgee.init` block with the
+CDN prefix redacted, the output of `curl -I <prefix>/en.json`, whether `availableLocaleTags` is set, and the
+relevant symptom row above. Open issues at
+[github.com/tolgee/tolgee-mobile-kotlin-sdk/issues](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/issues).
+
+## Related
+
+- [Troubleshooting (Views)](../troubleshooting.mdx), [Troubleshooting (Compose)](../jetpack/troubleshooting.mdx)
+- [API quick reference](./api-reference.mdx)
+- [Production guide](../production.mdx)

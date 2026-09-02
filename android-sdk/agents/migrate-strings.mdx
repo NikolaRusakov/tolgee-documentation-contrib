@@ -1,0 +1,220 @@
+---
+id: migrate-strings
+title: "Recipe: migrate resource strings to Tolgee"
+sidebar_label: "Migrate resource strings"
+description: Systematically route every string lookup of an existing Android app (getString, layouts, plurals, arrays, Compose stringResource, non-Activity contexts) through the Tolgee SDK while keeping strings.xml as fallback.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air, ai agent]
+---
+
+**Outcome:** every user-visible string that can be delivered over the air is resolved through Tolgee, the remaining
+exceptions are listed explicitly, key names stay identical to `strings.xml`, and the app behaves exactly as before
+when the CDN is unreachable.
+
+Prerequisite: the SDK is installed and initialized ([Views](./install-views.mdx) or [Compose](./install-compose.mdx)).
+
+## How resolution works (read before editing)
+
+- A translation is looked up by **key = resource entry name** (`R.string.welcome_message` → `welcome_message`), so no
+  key mapping table is needed. Keep resource names unchanged.
+- **Fallback is automatic**: if the key is missing on the CDN, the locale is not published, or the device is offline
+  with an empty cache, every Tolgee API returns the bundled Android string.
+- **Formatting**: `Formatter.Sprintf` (default) understands Android/Java placeholders `%s`, `%1$s`, `%d`, `%.2f`.
+  Positional arguments are passed exactly like to `getString(id, args...)`.
+- **Plurals** come from the CDN as an object keyed by CLDR category (`one`, `few`, `other`, …); the SDK selects the
+  form from the quantity argument using the current locale's rules.
+- **Arrays** come as JSON arrays and map to `getStringArray`.
+- **Not supported over the air**: namespaced keys, more than one plural inside a single string, the app label and
+  other strings rendered by the OS from the manifest, and strings consumed before `Application.onCreate()` finished.
+
+## Detect: inventory every lookup
+
+Run the whole block from the repository root and save the output; each pattern maps to one step below.
+
+```bash
+# A. Kotlin/Java lookups through Context/Resources
+grep -rnE '\bgetString\(|\bgetText\(|\bgetQuantityString\(|\bgetQuantityText\(|\bgetStringArray\(|\bgetTextArray\(' app/src/main --include='*.kt' --include='*.java'
+# B. Direct resource ids passed to views/toasts/snackbars/dialogs/notifications
+grep -rnE '\.setText\(R\.string\.|setTitle\(R\.string\.|setHint\(R\.string\.|Toast\.makeText\([^,]+, R\.string\.|Snackbar\.make\([^,]+, R\.string\.|setMessage\(R\.string\.|setContentTitle\(|setContentText\(' app/src/main --include='*.kt' --include='*.java'
+# C. XML layouts, menus, preferences
+grep -rnE '@string/' app/src/main/res/layout app/src/main/res/menu app/src/main/res/xml 2>/dev/null
+# D. Compose
+grep -rnE 'androidx\.compose\.ui\.res\.(stringResource|pluralStringResource|stringArrayResource)' app/src/main
+grep -rnE 'LocalContext\.current\.(getString|resources)' app/src/main
+# E. Strings resolved outside Activities (application context, services, workers, view models)
+grep -rnE 'applicationContext\.getString|application\.getString|context\.getString' app/src/main --include='*.kt' --include='*.java'
+# F. Strings that must stay static
+grep -n 'android:label' app/src/main/AndroidManifest.xml
+grep -rn 'translatable="false"' app/src/main/res/values/strings.xml
+```
+
+## Steps
+
+### 1. Sync keys with the Tolgee project
+
+Push the current resources so every key exists on the platform before the app starts asking for it:
+
+```bash
+npm install --global @tolgee/cli
+tolgee login <project API key>      # never commit this key
+tolgee push                          # uses .tolgeerc with format ANDROID_XML (see Starters)
+```
+
+Then publish the Content Delivery (format **Android SDK**) or wait for auto-publish. From now on new strings follow
+the same loop: add to `strings.xml` → `tolgee push` → translate on the platform → published over the air.
+
+### 2. Route Activity-scoped lookups through the context wrapper (Views)
+
+With `attachBaseContext(TolgeeContextWrapper.wrap(newBase))` in every Activity (or a `BaseActivity`), patterns **A**,
+**B** and **C** that execute against the Activity context need **no code change**:
+
+| Pattern | What happens after wrapping |
+|---|---|
+| `getString(id)`, `getString(id, args)`, `getText(id)` | Resolved by `TolgeeResources`, formatted with Sprintf, fallback to bundled |
+| `resources.getQuantityString(id, n, args)` | Plural form chosen by locale rules from the CDN object |
+| `resources.getStringArray(id)` / `getTextArray(id)` | Array from the CDN |
+| Layout `android:text`, `android:hint`, `android:contentDescription` | Translated during inflation by `TolgeeLayoutInflaterFactory`, re-applied by `retranslate()` |
+| `Toast.makeText(this, R.string.x, …)`, `Snackbar.make(view, R.string.x, …)`, `AlertDialog.Builder(this).setTitle(R.string.x)` | Resolved through the wrapped context or the view's context |
+
+Only strings **with format placeholders in layouts** are skipped by the inflater (it cannot know the arguments); set
+them from code, which is pattern **B** and already covered.
+
+Verify the wrap is in place for every Activity:
+
+```bash
+grep -rL 'TolgeeContextWrapper.wrap' $(grep -rlE 'Activity\(\)' app/src/main --include='*.kt')
+```
+
+The command prints Activities that still lack the override. Activities that extend a wrapped `BaseActivity` can be
+ignored.
+
+### 3. Convert lookups that run outside an Activity
+
+Pattern **E** (Application context, `Service`, `BroadcastReceiver`, `WorkManager` workers, view models holding
+`Application`, notification builders) bypasses the wrapper. Choose one of two equivalent forms and apply it
+consistently:
+
+```kotlin
+import io.tolgee.common.getStringT            // extension functions on Context / Resources
+import io.tolgee.common.getQuantityStringT
+import io.tolgee.common.getStringArrayT
+import io.tolgee.Tolgee
+
+// Form 1: extension functions with automatic fallback
+val title = context.getStringT(R.string.notification_title)
+val body  = context.getStringT(R.string.notification_body, userName)
+val count = context.resources.getQuantityStringT(R.plurals.new_messages, n, n)
+
+// Form 2: explicit instance (useful when injecting Tolgee for tests)
+val tolgee = Tolgee.instance
+val title2 = tolgee.t(context, R.string.notification_title)
+val body2  = tolgee.t(context, R.string.notification_body, userName)
+val count2 = tolgee.tPlural(context.resources, R.plurals.new_messages, n, n)
+val items  = tolgee.tArray(context.resources, R.array.options)
+```
+
+Alternatively wrap the long-lived context once: `val ctx = TolgeeContextWrapper.wrap(applicationContext)` and keep using
+`ctx.getString(...)`.
+
+Rules of thumb:
+
+- Do not resolve strings in constructors or `init` blocks that run before `Application.onCreate()` completes.
+- Strings displayed for a long time (persistent notifications, widgets) should be refreshed from a `changeFlow`
+  collector, because a locale switch does not re-run their creation code.
+
+### 4. Make screens react to updates
+
+Translations arrive asynchronously (cache first, then CDN). Pick the reactive mechanism per screen:
+
+```kotlin
+// Views: re-apply inflated strings in place and re-bind code-set strings
+lifecycleScope.launch {
+    Tolgee.instance.changeFlow.collect {
+        Tolgee.instance.retranslate(this@MainActivity)
+        bindDynamicStrings()          // your function that sets parameterised/plural/array texts
+    }
+}
+
+// Single view, live updates without recreate
+lifecycleScope.launch {
+    Tolgee.instance.tFlow(this@MainActivity, R.string.status_line, progress).collect { statusView.text = it }
+}
+
+// Simplest but heaviest: recreate() inside the changeFlow collector
+```
+
+Call `Tolgee.instance.preload(this)` in `onStart()` of the entry Activity so the first screen renders CDN text as soon
+as possible. `preloadAll(this)` warms every published locale for apps that switch languages often.
+
+### 5. Migrate Compose call sites
+
+Pattern **D**: replace the three imports, nothing else.
+
+```diff
+- import androidx.compose.ui.res.stringResource
+- import androidx.compose.ui.res.pluralStringResource
+- import androidx.compose.ui.res.stringArrayResource
++ import io.tolgee.stringResource
++ import io.tolgee.pluralStringResource
++ import io.tolgee.stringArrayResource
+```
+
+`LocalContext.current.getString(...)` inside composables becomes `stringResource(...)`, which also recomposes on
+updates. In view models prefer passing resource ids (or a `Flow<String>` from `tFlow`) to the UI over formatting text
+in the view model; if text must be built there, use `context.getStringT(...)` (step 3).
+
+Compose Multiplatform: same imports; call with `Res.string.key` / `Res.plurals.key`; keys are pushed with
+`format: "COMPOSE_XML"`.
+
+### 6. Decide the exceptions explicitly
+
+Leave these as bundled resources and record them in the migration notes:
+
+| String | Why it stays static |
+|---|---|
+| `android:label` on `<application>` / `<activity>`, shortcut labels, widget previews | Rendered by the OS from the APK, never by app code |
+| Strings marked `translatable="false"` | Not translated by design (identifiers, URLs) |
+| Strings needed before `Tolgee.init` runs (e.g. in `ContentProvider.onCreate`) | No SDK instance yet; the wrapper falls back to plain resources anyway |
+| Keys that use namespaces on the platform | The SDK reads a single, namespace-less delivery |
+| A single string containing two plural expressions | Only one plural category per string is selected |
+
+For `Activity` titles set from the manifest label, update them from code: `setTitle(R.string.app_name)` inside the
+`changeFlow` collector (the wrapped context resolves it) or via `tFlow(this, R.string.app_name).collect { title = it }`.
+
+### 7. Keep strings.xml as the source of truth
+
+- New strings are still added to `res/values/strings.xml` and pushed with the CLI; the resource id is required for the
+  key name and for fallback.
+- Do not delete `values-xx/` folders; they are the offline fallback and the default text before the CDN answers.
+- Run `tolgee pull` before releases if you want the bundled fallbacks to match the platform.
+
+## Verify
+
+1. Re-run the **Detect** block. Pattern **D** must return nothing; patterns **A**, **B** and **C** may remain only in
+   Activities/Fragments (wrapped) or as documented exceptions; pattern **E** hits must use `getStringT`/`t(...)`.
+2. `./gradlew :app:assembleDebug` and the existing unit/UI tests pass. Tests run without `Tolgee.init`, so every API
+   falls back to bundled resources and expectations stay valid.
+3. Manual run with the CDN reachable: change one translation on the platform, publish, reopen the screen; the new
+   text appears. Switch locale with `Tolgee.instance.setLocale("cs")` (Views: then `preload(activity)`); all migrated
+   texts change, including plurals with a quantity that selects a different form.
+4. Manual run with the CDN blocked (airplane mode on a fresh install): the app shows bundled strings and no error.
+
+Done means: the four checks above pass and the exception list from step 6 is written down.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Some texts translate, others in the same screen do not | Those lookups run against a non-wrapped context (step 3) | Convert them to `getStringT` / `t(...)` or wrap that context |
+| Layout string never updates after `setLocale` | `retranslate()` not called, or the string has placeholders | Collect `changeFlow`; set parameterised strings from code |
+| Wrong plural form for a locale | `pluralStringResource(id, quantity, …)` / `getQuantityString(id, n, …)` called with the count only as a format arg | Pass the count as `quantity` and repeat it in `formatArgs` when the text prints it |
+| Placeholders appear literally (`%1$s`) | Delivery exported with ICU placeholders while the SDK uses Sprintf | Export the delivery with Android placeholders, or set `formatter(Tolgee.Formatter.ICU)` |
+| Key exists on the platform but bundled text is shown | Key name differs (renamed resource, namespace) | Keep names identical; check `resources.getResourceEntryName(id)` |
+| Crash `IllegalArgumentException: Only indexed or none parameters are supported` | `TolgeeMessageParams.Mapped` used with Sprintf | Use positional arguments, or switch to ICU |
+
+## Related
+
+- [Install: Android Views](./install-views.mdx), [Install: Jetpack Compose](./install-compose.mdx)
+- [API quick reference](./api-reference.mdx), [Diagnostics](./diagnostics.mdx)
+- Platform: [Android XML format](/platform/formats/android_xml), [Content Delivery](/platform/projects_and_organizations/content_delivery)
+- CLI: [project configuration](/tolgee-cli/project-configuration), [push and pull](/tolgee-cli/push-pull-strings)

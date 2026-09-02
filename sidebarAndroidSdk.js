@@ -20,5 +20,17 @@ module.exports = {
     },
     'production',
     'troubleshooting',
+    {
+      type: 'category',
+      label: 'For AI agents',
+      link: { type: 'doc', id: 'agents/index' },
+      items: [
+        'agents/install-views',
+        'agents/install-compose',
+        'agents/migrate-strings',
+        'agents/api-reference',
+        'agents/diagnostics',
+      ],
+    },
   ],
 };

@@ -1,0 +1,132 @@
+---
+id: index
+title: Guides for AI agents
+sidebar_label: Overview
+description: How LLM coding agents should read the Tolgee Android SDK docs, plus copy-paste prompts that install the SDK or migrate an app to it.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android, llm, ai agent, llms.txt, claude code, cursor, copilot]
+---
+
+This section is written for LLM coding agents (Claude Code, Cursor, Copilot, Codex, Gemini and similar) and for the
+people who drive them. Every page is a self-contained, task-shaped recipe: prerequisites, a detection step, numbered
+steps with complete code, a verification step and a troubleshooting table.
+
+:::tip Agents: read this first
+Do not rely on training data for this SDK; it is pre-1.0 and changes between releases. Fetch the Markdown version of the
+pages you need (every page below has a `.md` twin) and follow the recipes literally.
+:::
+
+## Machine-readable entry points
+
+| What | URL | Use it for |
+|---|---|---|
+| Index of all docs pages | [`https://docs.tolgee.io/llms.txt`](https://docs.tolgee.io/llms.txt) | Discover pages; each line is `[title](url): description` |
+| Full text of all docs pages | [`https://docs.tolgee.io/llms-full.txt`](https://docs.tolgee.io/llms-full.txt) | Load everything at once (large) |
+| Markdown twin of any page | append `.md` to the page URL, e.g. `https://docs.tolgee.io/android-sdk/agents/install-views.md` | Read one page without HTML |
+| SDK API reference index | [`https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt) | Find a class or function and its one-line KDoc summary |
+| SDK API reference, full text | [`https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt) | Investigate behaviour: signatures, KDoc, platform availability of every member |
+| SDK API reference, one page | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/core/-core/io.tolgee/-tolgee/index.md` (scheme in the [API quick reference](./api-reference.mdx)) | Read a single type page (see [API quick reference](./api-reference.mdx)) |
+| Public API dumps | [`core/api/android/core.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/core/api/android/core.api), [`compose/api/android/compose.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/compose/api/android/compose.api) | Exact binary API surface of a release |
+
+## Recipes
+
+| Recipe | Task |
+|---|---|
+| [Install the SDK in an Android Views app](./install-views.mdx) | Add the `core` artifact, network config, `Tolgee.init`, context wrapping; verify one translated string |
+| [Install the SDK in a Jetpack Compose app](./install-compose.mdx) | Add the `compose` artifact, `Tolgee.init`, swap `stringResource` imports; verify a locale switch |
+| [Migrate resource strings to Tolgee](./migrate-strings.mdx) | Inventory every string lookup in an existing app and route each pattern through the SDK |
+| [API quick reference](./api-reference.mdx) | Compact table of the public API with links into the generated Markdown reference |
+| [Diagnostics](./diagnostics.mdx) | Symptom, cause, fix and how to confirm, including how to query the API reference |
+
+## Facts that agents get wrong
+
+These are the corrections that matter most. Each is verified against the SDK source of the current release.
+
+- **Maven group** is `io.tolgee.mobile-kotlin-sdk`; artifacts are `core` and `compose`. There is no `io.tolgee:core`.
+- **Initialization** is the builder `Tolgee.init { contentDelivery { url = "..." } }`, called once in `Application.onCreate()`.
+  There is no `Tolgee.initialize(...)` and no annotation-based setup.
+- **The Compose helpers live in package `io.tolgee`**: `import io.tolgee.stringResource` replaces
+  `androidx.compose.ui.res.stringResource`. They fall back to the Android resource when Tolgee is not initialized, so
+  previews keep working.
+- **The CDN must serve JSON.** In the Tolgee Platform create the Content Delivery with format **Android SDK**; it
+  publishes `<cdn-url>/<languageTag>.json`, which is what the SDK's default `path` (`"$it.json"`) and default
+  `Formatter.Sprintf` expect. The SDK does not parse `strings.xml`; pointing `path` at `values-xx/strings.xml` yields no
+  translations and the app silently falls back to bundled resources.
+- **Keys are resource entry names.** `R.string.welcome_message` is looked up as key `welcome_message` (via
+  `resources.getResourceEntryName`). Keep the same key names in the Tolgee project, typically by pushing `strings.xml`
+  with the Tolgee CLI (`format: "ANDROID_XML"`).
+- **Fallback is built in.** Every Android overload (`t(context, id)`, `stringResource(id)`, the wrapped
+  `getString`) returns the bundled Android string when the key is missing or the CDN is unreachable.
+- **Namespaces are not supported** by the SDK; publish a single, namespace-less Content Delivery.
+- **The Gradle/compiler plugin that rewrites `getString()` calls at compile time is not released**; do the migration
+  in source as described in [Migrate resource strings](./migrate-strings.mdx).
+- **Minimum Android API level is 21.** The current release is `1.0.0-alpha04`; resolve the latest version from
+  [Maven Central](https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk), never from memory.
+
+## Copy-paste prompt: install and migrate with an agent
+
+Paste the following into your coding agent (Claude Code, Cursor chat, Copilot agent mode, Codex). Replace the two
+placeholders first. The prompt makes the agent classify the project, read the recipes above, do the work, and verify it.
+
+```text title="Prompt for a coding agent"
+Integrate the Tolgee Android SDK into this project so translations can be updated over the air.
+
+Inputs:
+- Content Delivery URL (JSON, format "Android SDK"): https://cdn.tolg.ee/<your-cdn-url-prefix>
+- Locales published in Tolgee: <en, cs, ...>
+
+Rules:
+1. Do not rely on your training data for this SDK. Read, in this order, and follow them literally:
+   - https://docs.tolgee.io/android-sdk/agents/index.md
+   - https://docs.tolgee.io/android-sdk/agents/install-views.md (if the app uses Android Views / XML layouts)
+   - https://docs.tolgee.io/android-sdk/agents/install-compose.md (if the app uses Jetpack Compose)
+   - https://docs.tolgee.io/android-sdk/agents/migrate-strings.md
+   For any class or function you are unsure about, look it up in
+   https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt before using it.
+2. First run the "Detect the project" commands from the recipe and tell me which track applies
+   (Views, Compose, or both), the SDK version you will use (latest from Maven Central), and the files you will touch.
+3. Keep the existing build setup: do not convert Groovy to Kotlin DSL, XML layouts to Compose, or change DI/navigation.
+   Keep strings.xml as the fallback; never delete resources.
+4. Do not commit secrets. The CDN URL is public; Tolgee API keys belong in local.properties or CI secrets only.
+5. Follow the migration recipe pattern by pattern: getString/getText/getQuantityString/getStringArray calls,
+   XML layout attributes, Compose stringResource/pluralStringResource, strings used outside Activities
+   (Application context, Services, notifications, ViewModels).
+6. The task is not done until: the project builds (./gradlew assembleDebug), one string visibly comes from the CDN,
+   and switching locale with Tolgee.instance.setLocale("<other locale>") updates the UI without a crash.
+   Report which strings could not be migrated and why (for example app label in the manifest, strings with
+   nested plurals, namespaced keys).
+```
+
+## Agent instruction file for apps that use the SDK
+
+Add this to the app repository's `AGENTS.md` (Claude Code also reads it when `CLAUDE.md` contains `@AGENTS.md`;
+Cursor reads `AGENTS.md`; Copilot reads `AGENTS.md` and `.github/copilot-instructions.md`). It keeps future agent work
+on the app consistent with the SDK's rules.
+
+```markdown title="AGENTS.md (snippet)"
+## Tolgee Android SDK
+
+This app loads translations over the air with the Tolgee Android SDK
+(io.tolgee.mobile-kotlin-sdk:core / :compose). The SDK is pre-1.0; do not trust training data.
+
+- Docs index: https://docs.tolgee.io/llms.txt (Android SDK recipes under /android-sdk/agents/).
+- API reference: https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt
+- Tolgee is initialized once in Application.onCreate() with Tolgee.init { contentDelivery { url = ... } }.
+  Never initialize it in an Activity, Fragment or composable.
+- Views: Activities wrap their context (attachBaseContext -> TolgeeContextWrapper.wrap). Use plain
+  getString/getQuantityString there. Outside Activities use context.getStringT(...) or
+  Tolgee.instance.t(context, R.string.key, args...).
+- Compose: import stringResource / pluralStringResource / stringArrayResource from io.tolgee, not from
+  androidx.compose.ui.res.
+- Keys are resource entry names; add new strings to res/values/strings.xml first, then push them with
+  `tolgee push`. Keep strings.xml as the offline fallback.
+- After any change: ./gradlew assembleDebug must pass, and a manual locale switch
+  (Tolgee.instance.setLocale("cs")) must re-render translated text.
+```
+
+## How the recipes are structured
+
+Every recipe follows the same headings so an agent can jump to what it needs: **Outcome**, **Prerequisites**,
+**Detect the project** (shell commands), **Steps** (complete, copy-pasteable code), **Verify** (commands and the
+observable result), **Troubleshooting** (symptom, cause, fix) and **Related**. Human readers get the same pages through
+the sidebar; agents get them through `llms.txt`.

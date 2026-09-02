@@ -23,3 +23,9 @@ npm run build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
+
+## LLM-friendly output
+
+The build also writes `build/llms.txt`, `build/llms-full.txt` and a Markdown twin of every documentation page
+(`build/<route>.md`) through `@signalwire/docusaurus-plugin-llms-txt`, configured in `llmsTxt.js`. Guides written for
+coding agents live in `android-sdk/agents/`; the research behind the approach is in `LLM_DOCS_RESEARCH.md`.

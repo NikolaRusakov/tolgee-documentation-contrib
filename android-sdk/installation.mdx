@@ -89,23 +89,24 @@ In the diagram below, you can find the general flow of how Android developers us
   flowchart TD;
     A["Register App in Tolgee Platform"] --> B["Copy Tolgee CLI configuration\nfrom Integration tab"];
     B --> C["Push translations with Tolgee CLI\nto Tolgee Platform"];
-    C --> D["Configure Content Delivery in\nDeveloper Settings (using strings.xml)"];
-    D --> E["Configure Tolgee.init in your app\nwith correct resource path config"];
+    C --> D["Configure Content Delivery in\nDeveloper Settings (format: Android SDK)"];
+    D --> E["Configure Tolgee.init in your app\nwith the Content Delivery URL"];
     `}
 />
 
 ### Tolgee Platform Setup
 
 In order to use translations in the app, make sure you have configured content delivery.
+
 > NOTE:
-> When using Tolgee CLI and pushing strings.xml resource files, make sure you set up `contentDelivery` configuration in Tolgee.init as such
-
-```kotlin
-    path = { "values-$it/strings.xml" }
-```
-
-otherwise default is used which is `"$it.json"` and you will not see any updates in the app. 
-See more in [Installation](/android-sdk/installation.mdx) and [Usage](/android-sdk/usage.mdx) docs.
+> The SDK reads **JSON** from the CDN (one `<languageTag>.json` file per locale, plurals as objects keyed by CLDR
+> category, arrays as JSON arrays). Create the Content Delivery with the format **Android SDK**, which produces exactly
+> this layout with Android-style placeholders. The defaults `path = { "$it.json" }` and `Tolgee.Formatter.Sprintf`
+> then need no change.
+>
+> Pushing `strings.xml` files with the Tolgee CLI (`format: "ANDROID_XML"`) is still the recommended way to keep keys in
+> sync; it only affects how strings enter the platform, not how the CDN serves them. Do not point `path` at
+> `values-$it/strings.xml`: the SDK cannot parse XML, and the app would silently fall back to the bundled resources.
 
 How to get your CDN URL prefix (Content Delivery):
 - Open Tolgee Platform → your Project → Developer settings → Content Delivery.
@@ -139,27 +140,32 @@ curl -I "https://cdn.tolg.ee/your-cdn-url-prefix/en.json"
 
 ---
 
-## Initialize Tolgee with Android resources (strings.xml)
+## Customising the CDN layout and locales
 
-In order to use Tolgee with XML resources, you need to specify the path pattern ending with `strings.xml` in the configuration. For example:
+`path` maps a language tag to the file fetched from the CDN URL prefix. Override it only when you host the JSON files
+yourself under a different layout; the files must still be JSON in the "Android SDK" shape. `availableLocaleTags`
+lists the published locales when the CDN does not serve a `manifest.json`; it enables BCP 47 fallback
+(`zh-Hans-CN → zh-Hans → zh`) and `preloadAll()`.
 
 ```kotlin
 // in Application class
 Tolgee.init {
-      contentDelivery {
-        url = "https://cdn.tolg.ee/083a55e896b5dcb9d358dc928e9f1234"
-        path = { "values-$it/strings.xml" }
+    contentDelivery {
+        url = "https://cdn.example.com/i18n"
+        path = { "android/$it.json" }              // default: "$it.json"
         storage = TolgeeStorageProviderAndroid(this@AndroidApp, BuildConfig.VERSION_CODE)
-        availableLocales(availableLocales)
-      }
-      defaultLanguage("cs")
+        availableLocaleTags("en", "cs", "fr")
     }
+    defaultLanguage("cs")
+}
 ```
 
-You should receive a 200 response. If you get 403/404, double‑check the prefix.
+You should receive a 200 response with a JSON object. If you get 403/404, double‑check the prefix.
 ```bash
-curl -I "https://cdn.tolg.ee/your-cdn-url-prefix/values-cs/strings.xml"
+curl -I "https://cdn.example.com/i18n/android/cs.json"
 ```
+
+Using an AI coding agent to do the setup? See the [guides for AI agents](./agents/index.mdx).
 
 <!-- #TODO: mention context in a traditional installation as a separate step -->
 > TIP:

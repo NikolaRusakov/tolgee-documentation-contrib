@@ -1,0 +1,185 @@
+---
+id: install-compose
+title: "Recipe: install the SDK in a Jetpack Compose app"
+sidebar_label: "Install: Jetpack Compose"
+description: Add the Tolgee compose artifact, initialize it in Application, switch the stringResource imports and verify a runtime locale change in a Jetpack Compose or Compose Multiplatform app.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android, jetpack compose, compose multiplatform, stringResource, install, ai agent]
+---
+
+**Outcome:** composables read strings through Tolgee's `stringResource` / `pluralStringResource`, previews and tests
+still work through the built-in fallback, and switching locale at runtime recomposes the UI with CDN translations.
+
+For XML-layout screens in the same app also apply [Install: Android Views](./install-views.mdx); the `compose`
+artifact already contains `core`.
+
+## Prerequisites
+
+- Android app with `minSdk >= 21` and Jetpack Compose, or a Compose Multiplatform project using
+  `org.jetbrains.compose.resources` (`Res.string.*`).
+- Keys in the Tolgee project equal to the resource names in `res/values/strings.xml` (Android) or
+  `composeResources/values/strings.xml` (Multiplatform). Push them with the [Tolgee CLI](/tolgee-cli/installation)
+  using `format: "ANDROID_XML"` or `"COMPOSE_XML"` respectively.
+- A Content Delivery with format **Android SDK** (JSON output), created in
+  **Tolgee Platform → Project → Developer settings → Content Delivery**, and its published locales.
+
+## Detect the project
+
+```bash
+ls gradle/libs.versions.toml app/build.gradle.kts app/build.gradle 2>/dev/null
+grep -nE 'compose|minSdk|buildConfig' app/build.gradle* | head
+grep -rln ': Application()' app/src/main | head -3
+# Every file that imports the Compose resource helpers Tolgee replaces
+grep -rln 'androidx.compose.ui.res.stringResource\|androidx.compose.ui.res.pluralStringResource\|androidx.compose.ui.res.stringArrayResource' app/src/main
+# Compose Multiplatform variant
+grep -rln 'org.jetbrains.compose.resources.stringResource' . --include='*.kt' | head
+grep -rn 'io.tolgee' gradle/libs.versions.toml app/build.gradle* 2>/dev/null
+```
+
+## Steps
+
+### 1. Add the dependency
+
+```toml title="gradle/libs.versions.toml"
+[versions]
+tolgee = "1.0.0-alpha04"
+
+[libraries]
+tolgee-compose = { group = "io.tolgee.mobile-kotlin-sdk", name = "compose", version.ref = "tolgee" }
+```
+
+```kotlin title="app/build.gradle.kts"
+dependencies {
+    implementation(libs.tolgee.compose)
+}
+android {
+    buildFeatures { buildConfig = true } // BuildConfig.VERSION_CODE keys the on-device cache
+}
+```
+
+Compose Multiplatform: add the same library to `commonMain` dependencies.
+
+### 2. Allow the CDN hosts (Android)
+
+Identical to the Views recipe: create `res/xml/network_security.xml` with `tolgee.io` and `tolg.ee`, reference it with
+`android:networkSecurityConfig` and declare `android.permission.INTERNET`. See
+[step 2 there](./install-views.mdx#2-allow-the-cdn-hosts).
+
+### 3. Initialize once at app start
+
+```kotlin title="MyApplication.kt (Android)"
+import android.app.Application
+import io.tolgee.Tolgee
+import io.tolgee.storage.TolgeeStorageProviderAndroid
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        Tolgee.init {
+            contentDelivery {
+                url = "https://cdn.tolg.ee/your-cdn-url-prefix"
+                storage = TolgeeStorageProviderAndroid(this@MyApplication, BuildConfig.VERSION_CODE)
+                availableLocaleTags("en", "cs", "fr")
+            }
+            defaultLanguage("en")
+        }
+    }
+}
+```
+
+```kotlin title="Compose Multiplatform (commonMain), called from each platform entry point"
+fun initTolgee() {
+    Tolgee.init {
+        contentDelivery {
+            url = "https://cdn.tolg.ee/your-cdn-url-prefix"
+            // Provide a TolgeeStorageProvider implementation for persistent caching if needed.
+        }
+    }
+}
+```
+
+Register the Application class in the manifest with `android:name=".MyApplication"`. Never call `Tolgee.init`
+inside a composable.
+
+### 4. Switch the resource imports
+
+Replace the imports; call sites stay identical because the signatures mirror the Compose originals.
+
+```diff
+- import androidx.compose.ui.res.stringResource
+- import androidx.compose.ui.res.pluralStringResource
+- import androidx.compose.ui.res.stringArrayResource
++ import io.tolgee.stringResource
++ import io.tolgee.pluralStringResource
++ import io.tolgee.stringArrayResource
+```
+
+```kotlin
+@Composable
+fun Greeting(name: String, count: Int) {
+    Text(stringResource(R.string.welcome_message))                      // plain
+    Text(stringResource(R.string.welcome_user, name))                    // %1$s parameter
+    Text(pluralStringResource(R.plurals.item_count, count, count))       // quantity + %1$d
+}
+```
+
+Compose Multiplatform uses the same functions with `Res.string.welcome_message` / `Res.plurals.item_count`.
+
+How it behaves: each helper collects `tolgee.tFlow(...)` as state with the bundled resource as the initial value, so the
+first frame shows the fallback and recomposes when the CDN answer (or cache) arrives. When `Tolgee` is not initialized
+(previews, unit tests) the helper returns the plain Compose resource.
+
+### 5. Add a locale switch and observe changes
+
+```kotlin
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import kotlinx.coroutines.flow.map
+
+@Composable
+fun LocaleSwitcher() {
+    val tolgee = Tolgee.instance
+    val locale by tolgee.changeFlow.map { tolgee.getLocale() }.collectAsState(initial = tolgee.getLocale())
+    Row {
+        Text(locale.language)
+        Button(onClick = { tolgee.setLocale("en") }) { Text("English") }
+        Button(onClick = { tolgee.setLocale("cs") }) { Text("Čeština") }
+    }
+}
+```
+
+`stringResource` composables reload on their own when the locale changes; no manual `preload` is required in Compose.
+For the Activity title or other non-Compose text use `Tolgee.instance.tFlow(this, R.string.app_name).collect { title = it }`
+in `lifecycleScope`.
+
+## Verify
+
+1. CDN check: `curl -sSf "https://cdn.tolg.ee/your-cdn-url-prefix/en.json" | head -c 300` returns a JSON object.
+2. `./gradlew :app:assembleDebug` succeeds. If the build reports an ambiguous `stringResource`, a file still imports the
+   `androidx.compose.ui.res` version alongside `io.tolgee`; keep only the Tolgee import.
+3. Run the app, tap the locale switch: texts rendered by the migrated composables change without restarting.
+4. `@Preview` composables still render (fallback path, no network).
+
+Done means: build green, a locale switch observed in the running app, previews unaffected.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Text never changes from the bundled value | `Tolgee.init` missing or executed after first composition; wrong CDN prefix | Initialize in `Application.onCreate()`; run the `curl` check |
+| `Unresolved reference: stringResource` | Import removed but Tolgee import not added | `import io.tolgee.stringResource` |
+| Overload ambiguity on `stringResource` | Both imports present | Remove the `androidx.compose.ui.res` import |
+| Plural shows the wrong form | Quantity passed only as the format argument | Signature is `pluralStringResource(id, quantity, vararg formatArgs)`; pass the count as `quantity` and again as an argument if the string prints it |
+| Locale switch recomposes but shows the fallback | Locale not published or not listed in `availableLocaleTags` | Publish it in the delivery and add it to the list |
+| Multiplatform: keys never resolve | Key derived from `StringResource.key` differs from the Tolgee key | Push resources with `format: "COMPOSE_XML"` so names match |
+
+More cases: [Diagnostics](./diagnostics.mdx).
+
+## Related
+
+- Next: [Migrate resource strings to Tolgee](./migrate-strings.mdx).
+- Reference pages: [Jetpack Compose installation](../jetpack/installation.mdx), [usage](../jetpack/usage.mdx),
+  [troubleshooting](../jetpack/troubleshooting.mdx).
+- API: [`stringResource` and friends (compose module)](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/compose/-compose/io.tolgee/index.md).
+- Working examples: [demo/examplejetpack](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/examplejetpack),
+  [demo/multiplatform-compose](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/multiplatform-compose).
