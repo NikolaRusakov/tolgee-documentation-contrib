@@ -33,3 +33,6 @@ assistant; a page can set `llm_prompt` in its front matter to customise the prom
 Markdown URL). Guides written for coding agents live in `android-sdk/agents/`; the research behind the approach is in
 `LLM_DOCS_RESEARCH.md`. `context7.json` prepares the repository for Context7 indexing (submit once at
 https://context7.com/add-library).
+
+These files exist only after `npm run build`; the dev server (`npm start`) returns 404 for them, so test with
+`npm run build && npm run serve`.
