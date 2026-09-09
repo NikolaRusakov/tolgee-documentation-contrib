@@ -156,7 +156,8 @@ Each fetch of `<languageTag>.json` overwrites the cached copy for that language.
 served. When both are missing, every API returns the bundled Android resource. The CDN edge caches a published file
 for up to about fifteen minutes, so a change in the platform can take that long to reach a device that fetches
 constantly; a fresh app start after publishing usually shows it immediately. At most one language is held in memory
-by default (`maxLocalesInMemory = 1`); raise it for apps that switch languages often.
+by default (`maxLocalesInMemory = 1`); raise it for apps that switch languages often. The full load sequence is on
+[Loading and caching](/android-sdk/caching).
 
 ## Can I self-host the Content Delivery?
 

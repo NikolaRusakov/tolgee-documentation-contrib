@@ -81,7 +81,8 @@ val current = Tolgee.instance.getLocale()
 Tolgee Android SDK resolves a requested locale progressively: `zh-Hans-CN` falls back to `zh-Hans`, then to `zh`, and
 finally to `defaultLanguage` from `Tolgee.init`. A device set to `en-US` therefore receives the `en` translations
 without any configuration. When a key is missing in the resolved language, the bundled Android resource for the
-device configuration is returned, which is why keeping `values-xx/strings.xml` in the app still matters.
+device configuration is returned, which is why keeping `values-xx/strings.xml` in the app still matters. The rules
+and where the list of published languages comes from are on [Language and fallback](/android-sdk/language).
 
 ## Frequently asked questions
 

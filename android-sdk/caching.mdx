@@ -1,0 +1,155 @@
+---
+id: caching
+title: Loading and caching in Tolgee Android SDK
+sidebar_label: Loading and caching
+description: "How Tolgee Android SDK loads a language: CDN first, on-device cache on failure, bundled resources last; preload, the in-memory limit, storage providers."
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, caching, preload, preloadAll, TolgeeStorageProvider, offline, maxLocalesInMemory, changeFlow]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK loads translations lazily and in a fixed order: the Content Delivery first, the on-device cache
+when the network fails, and the bundled Android resources when both are empty. This page is for anyone who wants to
+know what the user sees at each moment, how to warm the cache with `preload` and `preloadAll`, how many languages stay
+in memory, and how to provide persistent storage on a platform where Tolgee Android SDK ships none.
+
+## When does Tolgee Android SDK load a language?
+
+Loading is lazy. Nothing is fetched in `Tolgee.init`. The first of these triggers a load of the resolved language:
+
+- `preload()` (or `preload(lifecycleOwner)` on Android), typically in `onStart` of the entry Activity;
+- a `tFlow` collector, which includes every Compose helper;
+- `preloadAll()` for every published language.
+
+`t(...)` and the wrapped `getString` never load: they answer from memory or fall back. That is why a screen that reads
+strings imperatively calls `preload`, and a Compose screen does not have to.
+
+## What is the load sequence?
+
+1. **Manifest** (optional): `manifest.json` from the Content Delivery, once per process. A failure disables fallback
+   unless `availableLocaleTags` is configured (see [Language and fallback](/android-sdk/language)).
+2. **Resolve** the locale against the published list.
+3. **CDN**: `GET <url>/<path(languageTag)>`, `en.json` by default, with `sdkType` and `sdkVersion` headers. A
+   successful response is parsed and **written to the storage provider**, overwriting the previous copy.
+4. **Storage** when the CDN fails or returns a non-2xx status: the last stored copy for that path is parsed.
+5. **Empty** when neither exists: every lookup falls back to the bundled resource.
+6. **In-memory cache** receives the parsed translation and `changeFlow` emits.
+
+Loading of one language is serialised with a mutex, so concurrent `tFlow` collectors trigger one fetch, not many.
+A parse failure of a CDN response, for example XML from a delivery in the wrong format, counts as a failure and the
+cache is consulted; it is never overwritten with unparsable data.
+
+## What does the user see, and when?
+
+| Moment | Text shown |
+|---|---|
+| First frame after a cold start | Bundled resource (or the cached translation once the storage read completes, usually within the same frame budget) |
+| CDN answers | Latest published translation; `changeFlow` emits, `retranslate` and `tFlow` update in place |
+| Offline, cache present | Cached translation from the last successful run |
+| Offline, fresh install | Bundled resource, no error |
+| After `setLocale` | Cached or bundled text for the new language until its load completes |
+
+## How do preload and preloadAll differ?
+
+`preload()` loads the manifest and the resolved current language. `preloadAll()` loads every published language, the
+current one **last** so it survives the in-memory limit, and ignores individual failures. On Android both have
+lifecycle-aware overloads that launch in the owner's scope and return the `Job`.
+
+```kotlin
+override fun onStart() {
+    super.onStart()
+    Tolgee.instance.preload(this)      // current language
+    // Tolgee.instance.preloadAll(this) // every language, for apps with a switch on the first screen
+}
+```
+
+## How many languages stay in memory?
+
+`maxLocalesInMemory` in `contentDelivery { }` sizes an LRU cache of parsed languages. The default is **1**: a language
+switch evicts the previous language from memory, though it stays in persistent storage. Set it to the number of
+languages the app switches between often, or to `null` for no limit.
+
+```kotlin
+contentDelivery {
+    maxLocalesInMemory = 3 // null = unlimited
+}
+```
+
+## How does persistent storage work?
+
+`TolgeeStorageProvider` is a two-method interface, `put(name, bytes)` and `get(name)`, keyed by the CDN path. On
+Android, `TolgeeStorageProviderAndroid(context, versionCode)` stores files under
+`filesDir/tolgee/localization-cache/<versionCode>/`, so a new app version starts with an empty cache and never serves
+a file from a release with different keys.
+
+**No platform ships a default provider.** The `storage` property is `null` unless you set it, on Android too; without
+it the app re-downloads on every cold start and shows bundled text offline. On JVM desktop, iOS or web, implement the
+interface yourself. A file-based JVM version is ten lines:
+
+```kotlin
+class FileStorageProvider(private val dir: File) : TolgeeStorageProvider {
+    override fun put(name: String, data: ByteArray) {
+        dir.mkdirs()
+        File(dir, name.replace("/", "_")).writeBytes(data)
+    }
+    override fun get(name: String): ByteArray? =
+        File(dir, name.replace("/", "_")).takeIf { it.exists() }?.readBytes()
+}
+```
+
+## How do I control the network layer?
+
+`network { }` in `Tolgee.init` accepts a Ktor `HttpClient`, an engine, or a configuration block, and a
+`CoroutineContext` for requests. Use it for a custom timeout, a proxy, certificate pinning, or a fixture client in
+tests.
+
+```kotlin
+Tolgee.init {
+    network {
+        client {
+            install(HttpTimeout) { requestTimeoutMillis = 5_000 }
+        }
+    }
+    contentDelivery { url = "https://cdn.tolg.ee/your-cdn-url-prefix" }
+}
+```
+
+## How fresh is the data?
+
+Every successful CDN fetch replaces the stored copy, and the SDK fetches on every load, so a device that opens the app
+is at most one CDN edge cache period behind the platform: about fifteen minutes after publishing. There is no
+background refresh; call `preload` again when the app returns to the foreground if that matters for your content.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Does Tolgee Android SDK ever serve stale text over fresh text?',
+      answer:
+        'No. The CDN is asked first on every load and its response overwrites the cache. The cache is used only when the network fails.',
+    },
+    {
+      question: 'How do I clear the cache?',
+      answer:
+        'Release a new version code, which starts a fresh cache directory, or delete the tolgee/localization-cache folder under filesDir yourself. There is no runtime clear API.',
+    },
+    {
+      question: 'Why does the first frame show English?',
+      answer:
+        'The bundled resource is shown until the storage read or the CDN response completes. Keep values-xx/strings.xml up to date with tolgee pull so the first frame is already in the right language.',
+    },
+    {
+      question: 'Is anything loaded in Tolgee.init?',
+      answer:
+        'No. Initialization only stores the configuration. The first preload or tFlow collector triggers the manifest and language load.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Production guide](/android-sdk/production): version codes, environments and offline behaviour in a release.
+- [Language and fallback](/android-sdk/language): the resolution step before loading.
+- [API reference](/android-sdk/api) for `Tolgee.Config.ContentDelivery.Builder` and `TolgeeStorageProvider`.

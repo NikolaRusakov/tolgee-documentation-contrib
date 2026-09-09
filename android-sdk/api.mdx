@@ -46,6 +46,19 @@ Examples: [`Tolgee`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/
 [compose helpers](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/compose/-compose/io.tolgee/index.md).
 If a link 404s, resolve the page through `llms.txt` instead of guessing.
 
+## How do I create an instance for tests?
+
+`Tolgee.new { }` builds an independent instance without touching the singleton, which is how tests and dependency
+injection get a `Tolgee` with a fixture HTTP client:
+
+```kotlin
+val tolgee = Tolgee.new {
+    availableLocaleTags("en")
+    network { client(MockEngine { respond(fixtureJson, headers = headersOf("Content-Type", "application/json")) }) }
+    contentDelivery { url = "https://cdn.example.test/prefix" }
+}
+```
+
 ## What is in the core module?
 
 The `core` artifact (`io.tolgee.mobile-kotlin-sdk:core`) holds the multiplatform `Tolgee` class, its configuration
@@ -94,35 +107,11 @@ builders, the Android overloads that take resource ids, the context wrapper and 
 `TolgeeMessageParams` (package `io.tolgee.model`) has `None`, `Indexed(vararg args)` (Sprintf and ICU) and
 `Mapped(map)` (ICU only).
 
-### `io.tolgee.TolgeeAndroid` (Android; what `Tolgee.instance` is)
+### Android additions
 
-| Member | Purpose |
-|---|---|
-| `t(context, @StringRes id)` / `t(context, id, vararg args)` / `t(resources, …)` | Lookup by resource id with bundled fallback. |
-| `tFlow(context, id[, args])` | Reactive variant. |
-| `tPlural(resources, @PluralsRes id, quantity[, args])` / `tPluralFlow(...)` | Plurals. |
-| `tArray(resources, @ArrayRes id)` / `tArrayFlow(...)` | Arrays. |
-| `tStyled(...)`, `tPluralStyled(...)`, `tArrayStyled(...)` | `CharSequence` variants keeping markup. |
-| `preload(lifecycleOwner)` / `preloadAll(lifecycleOwner)` | Launch loading in `lifecycleScope`, returns `Job`. |
-| `retranslate(activity)` / `retranslate(rootView)` | Re-apply translations to views inflated through the wrapper. |
-| `TolgeeAndroid.getKeyFromResources(context|resources, id)` | The key name used for a resource id. |
-
-### `io.tolgee.TolgeeContextWrapper` (Android)
-
-| Member | Purpose |
-|---|---|
-| `TolgeeContextWrapper.wrap(base)` / `wrap(base, tolgee)` | Wrap an Activity (or any) context; plain wrapper when Tolgee is not initialized. |
-| constructor flags `interceptGetString`, `interceptGetText`, `argumentLayoutInflater` | Fine-grained control when constructing directly. |
-
-The wrapper's `Resources` overrides `getString`, `getText`, `getQuantityString`, `getQuantityText`, `getStringArray`,
-`getTextArray`; its `LayoutInflater` translates `android:text`, `android:hint` and `android:contentDescription`.
-
-### `io.tolgee.common` extension functions (Android)
-
-`Context.getStringT(id[, args])`, `Resources.getStringT(...)`, `Resources.getQuantityStringT(id, quantity[, args])`,
-`Resources.getStringArrayT(tolgee, id)`, `Context.getTextT(tolgee, id)`, `Resources.getTextT(tolgee, id[, def])`,
-`Resources.getQuantityTextT(tolgee, id, quantity)`, `Resources.getTextArrayT(tolgee, id)`. Overloads without a
-`tolgee` parameter use `Tolgee.instanceOrNull` and fall back to the plain resource.
+`Tolgee.instance` on Android is a `TolgeeAndroid` with resource-id overloads (`t(context, id, …)`, `tFlow`, `tPlural`,
+`tArray`, styled variants), `preload(lifecycleOwner)`, `retranslate`, the `TolgeeContextWrapper`, and the
+`io.tolgee.common` extension functions. They are listed on [API for Android Views](/android-sdk/integrations/android-views/api).
 
 ### `io.tolgee.storage`
 
@@ -133,19 +122,10 @@ The wrapper's `Resources` overrides `getString`, `getText`, `getQuantityString`,
 
 ## What is in the compose module?
 
-The `compose` artifact (`io.tolgee.mobile-kotlin-sdk:compose`) depends on `core` and adds the three composable helpers.
-
-All in package `io.tolgee`; every function has an overload with an explicit `tolgee: Tolgee` first parameter.
-
-| Composable | Android | Compose Multiplatform |
-|---|---|---|
-| `stringResource(id[, vararg args])` | `@StringRes Int` | `StringResource` (`Res.string.x`) |
-| `pluralStringResource(id, quantity[, vararg args])` | `@PluralsRes Int` | `PluralStringResource` |
-| `stringArrayResource(id)` | `@ArrayRes Int` → `Array<String>` | `StringArrayResource` → `List<String>` |
-| `Tolgee.setLocale(composeLocale)` / `Config.Builder.locale(composeLocale)` | `androidx.compose.ui.text.intl.Locale` overloads | same |
-
-Behaviour: collect `tFlow` as state with the bundled resource as initial value; without an initialized `Tolgee`
-they delegate to the platform composable.
+The `compose` artifact (`io.tolgee.mobile-kotlin-sdk:compose`) depends on `core` and adds `stringResource`,
+`pluralStringResource` and `stringArrayResource` in package `io.tolgee`, with overloads for Android resource ids and for
+Compose Multiplatform `Res` objects, plus `Locale` helpers. Every overload is listed on
+[API for Jetpack Compose](/android-sdk/integrations/jetpack-compose/api).
 
 ## What about the gradle-plugin module?
 
@@ -182,5 +162,5 @@ current release; do not add it to consumer builds.
 ## Next steps
 
 - [Diagnostics](/android-sdk/agents/diagnostics) for how to use the reference when investigating behaviour.
-- [Translating in Android Views](/android-sdk/integrations/android-views/translating) and
-  [Translating in Jetpack Compose](/android-sdk/integrations/jetpack-compose/translating) for narrative examples.
+- [API for Android Views](/android-sdk/integrations/android-views/api) and
+  [API for Jetpack Compose](/android-sdk/integrations/jetpack-compose/api) for the toolkit-specific surface.

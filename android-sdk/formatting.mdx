@@ -1,0 +1,166 @@
+---
+id: formatting
+title: Formatting in Tolgee Android SDK
+sidebar_label: Formatting
+description: "Sprintf versus ICU in Tolgee Android SDK: placeholders, plurals and arrays in each mode, and which Content Delivery format each formatter needs."
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, formatting, sprintf, icu, placeholders, plurals, TolgeeMessageParams, content delivery format]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK formats a translation with one of two formatters chosen in `Tolgee.init`: **Sprintf**, the default,
+understands Android and Java placeholders such as `%1$s` and `%d`; **ICU** understands messages such as
+`{name} has {count, plural, one {# item} other {# items}}`. This page is for anyone deciding between them or debugging
+a placeholder that renders literally. It covers which Content Delivery format each formatter needs, how arguments,
+plurals and arrays work in each mode, and what cannot be mixed.
+
+## Which formatter should I use?
+
+Use the formatter that matches the text your Content Delivery publishes. The formatter does not convert between
+syntaxes; a mismatch shows placeholders literally.
+
+| | Sprintf (default) | ICU |
+|---|---|---|
+| Placeholder syntax | `%s`, `%1$s`, `%d`, `%.2f`, `%%` | `{0}`, `{name}`, `{count, plural, …}`, `{n, number}` |
+| Content Delivery format | **Android SDK** (JSON with Android placeholders) | Tolgee native JSON with ICU messages |
+| Arguments | positional only (`TolgeeMessageParams.Indexed`) | positional or named (`Indexed` or `Mapped`) |
+| Plurals | JSON object keyed by CLDR category; form chosen from the first argument | inside the message with `plural` / `selectordinal` |
+| Source of truth in the app | `strings.xml` pushed as `ANDROID_XML` | `strings.xml` still provides keys and fallback |
+| Set with | nothing, it is the default | `formatter(Tolgee.Formatter.ICU)` inside `contentDelivery { }` |
+
+Sprintf is the right choice for an app whose strings live in `strings.xml`, which is every Android app that follows
+the installation guides. Switch to ICU when the Tolgee project is shared with web clients that use ICU messages and the
+Content Delivery for Android is exported in that format.
+
+```kotlin
+Tolgee.init {
+    contentDelivery {
+        url = "https://cdn.tolg.ee/your-cdn-url-prefix"
+        formatter = Tolgee.Formatter.ICU // only when the delivery publishes ICU messages
+    }
+}
+```
+
+## How do arguments work with Sprintf?
+
+Arguments are passed exactly as to `getString(id, args)`: by position. The Android overloads wrap them in
+`TolgeeMessageParams.Indexed`, and the common `t(key, params)` accepts the same type directly.
+
+```xml title="res/values/strings.xml"
+<string name="welcome_user">Welcome, %1$s! You have %2$d new messages.</string>
+```
+
+```kotlin
+getString(R.string.welcome_user, name, count)                       // wrapped Activity context
+Tolgee.instance.t(context, R.string.welcome_user, name, count)      // explicit
+Tolgee.instance.t("welcome_user", TolgeeMessageParams.Indexed(name, count)) // by key, any platform
+```
+
+The conversions Tolgee Android SDK implements are `s`, `d` and `i`, `o`, `x` and `X`, `f` and `F`, `e` and `E`,
+`g` and `G`, `c`, and the `t`/`T` date-time family, with width, precision and flags as in Java's `String.format`.
+`%%` prints a percent sign. Named arguments (`TolgeeMessageParams.Mapped`) throw
+`IllegalArgumentException: Only indexed or none parameters are supported` in Sprintf mode.
+
+## How do plurals work with Sprintf?
+
+A Content Delivery in the "Android SDK" format publishes a plural as an object keyed by CLDR category:
+
+```json
+{
+  "new_messages": { "one": "%1$d new message", "few": "%1$d new messages", "other": "%1$d new messages" }
+}
+```
+
+Tolgee Android SDK selects the category with the CLDR plural rules of the language it loaded, using the **first
+argument** as the quantity, and then formats the selected text with all arguments. That is why every plural API takes
+the quantity first and passes it on as `%1$d`: `getQuantityString(id, n, n, …)`, `tPlural(resources, id, n, …)`,
+`pluralStringResource(id, n, …)`. Passing the quantity only as a later argument selects the wrong form. One plural per
+string, as in Android resources.
+
+## How do arguments and plurals work with ICU?
+
+ICU messages carry their own structure, so the app passes values and the message decides the form.
+
+```json
+{
+  "welcome_user": "Welcome, {name}! You have {count, plural, one {# new message} other {# new messages}}."
+}
+```
+
+```kotlin
+Tolgee.instance.t("welcome_user", TolgeeMessageParams.Mapped(mapOf("name" to name, "count" to count)))
+Tolgee.instance.t("greeting_indexed", TolgeeMessageParams.Indexed(name)) // for messages that use {0}
+```
+
+The Android resource-id overloads (`t(context, id, args)`, `getString` through the wrapper, the Compose helpers) pass
+positional arguments, so ICU messages consumed through them must use `{0}`, `{1}` placeholders. Named placeholders
+need the key-based `t(key, Mapped(...))` call. Plural categories follow the CLDR rules that ship with the SDK; a
+JSON plural object of the Sprintf kind is not read in ICU mode.
+
+## How do string arrays work?
+
+Both formatters read arrays the same way: the delivery publishes a JSON array, and `getStringArray`, `tArray`,
+`tArrayFlow` and `stringArrayResource` return it. Arrays are not formatted; format the items yourself if they contain
+placeholders.
+
+## How do I keep markup in a translation?
+
+Android resources can carry inline markup such as `<b>`; `getText` returns it as a styled `CharSequence`. Through the
+wrapped context, `getText` keeps that behaviour for the bundled fallback. Tolgee Android SDK also offers `tStyled`,
+`tPluralStyled` and `tArrayStyled` on the instance, which parse HTML-style tags in the translated text and return a
+`CharSequence`. The Compose helpers return plain `String`; build an `AnnotatedString` in the composable if you need
+styling there.
+
+## How do I format a number, a date or a percentage?
+
+In Sprintf mode the resource decides: `%.1f` prints one decimal, `%,d` groups thousands in Java style, `%tY-%tm-%td`
+prints a date from a `LocalDateTime` argument, and `%%` prints a percent sign. The formatting follows the conventions of
+Java's `String.format`, not the device locale's number symbols, so a decimal comma for Czech has to come from the
+translation text itself or from formatting the number before passing it as `%s`. In ICU mode `{n, number}` and
+`{d, date, short}` use the loaded language's conventions, which is the second reason to choose ICU for apps with heavy
+number and date formatting.
+
+## What happens on a mismatch?
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `%1$s` shown literally | Delivery publishes Android placeholders, formatter set to ICU | Remove `formatter(ICU)` |
+| `{name}` shown literally | Delivery publishes ICU messages, formatter is Sprintf | Set `formatter(Tolgee.Formatter.ICU)` |
+| `IllegalArgumentException: Only indexed or none parameters …` | `TolgeeMessageParams.Mapped` with Sprintf | Use positional arguments, or switch to ICU |
+| Wrong plural form | Quantity not passed as the first argument | Pass the quantity first, then the remaining arguments |
+| Plural key returns nothing in ICU mode | Plural published as a Sprintf-style object | Export the delivery as ICU messages with `plural` inside the text |
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Can I mix Sprintf and ICU strings in one app?',
+      answer:
+        'No. One formatter applies to the whole Tolgee instance and it must match the Content Delivery format. Create a second instance with Tolgee.new if two deliveries with different formats really have to coexist.',
+    },
+    {
+      question: 'Does the formatter change how strings.xml is read?',
+      answer:
+        'No. Bundled resources are always formatted by Android itself. The formatter only applies to text that arrives from the Content Delivery.',
+    },
+    {
+      question: 'Which placeholder should I use for a percentage?',
+      answer:
+        'In Sprintf mode write %1$s %% in the resource, exactly as in Android. The double percent sign prints one percent character.',
+    },
+    {
+      question: 'Are plural rules for every language included?',
+      answer:
+        'Yes. Tolgee Android SDK ships CLDR plural rules for both formatters and selects the category from the language it loaded, not from the device locale.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Content Delivery](/android-sdk/content-delivery): the format setting that decides the formatter.
+- [Translating in Android Views](/android-sdk/integrations/android-views/translating) and
+  [in Jetpack Compose](/android-sdk/integrations/jetpack-compose/translating) for the call sites.
+- [API reference](/android-sdk/api) for `TolgeeMessageParams` and `Tolgee.Formatter`.

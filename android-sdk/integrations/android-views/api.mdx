@@ -1,0 +1,122 @@
+---
+id: api
+title: API for Android Views
+sidebar_label: API
+description: "The Android-specific API of Tolgee Android SDK: TolgeeAndroid overloads, tFlow, TolgeeContextWrapper, the io.tolgee.common extensions and storage."
+image: /img/og-images/android-views.png
+keywords: [tolgee, android views, api, TolgeeAndroid, TolgeeContextWrapper, tFlow, tPlural, getStringT, TolgeeStorageProviderAndroid]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+`Tolgee.instance` on Android is a `TolgeeAndroid`, the class in the `core` artifact that adds resource-id overloads,
+lifecycle-aware preloading and layout re-translation to the common `Tolgee` API. This page lists that Android surface
+for developers writing Views code: the instance methods, the context wrapper, the extension functions for contexts that
+are not wrapped, and the storage provider. Signatures are abbreviated; the generated reference linked at the end has
+the full KDoc.
+
+## What does TolgeeAndroid add to the instance?
+
+All members take an Android resource id and fall back to the bundled resource when the key is missing or nothing is
+loaded. The key is the resource entry name (`R.string.welcome` → `welcome`).
+
+| Member | Purpose |
+|---|---|
+| `t(context, @StringRes id)` · `t(context, id, vararg args)` · `t(resources, id, …)` | Immediate lookup with Sprintf-formatted positional arguments |
+| `tFlow(context, id[, vararg args])` | `Flow<String>` that loads the language on first collection and re-emits on every locale or translation change |
+| `tPlural(resources, @PluralsRes id, quantity[, vararg args])` · `tPluralFlow(…)` | Plural form chosen by CLDR rules from `quantity`, which is also passed as `%1$d` |
+| `tArray(resources, @ArrayRes id)` · `tArrayFlow(…)` | String arrays |
+| `tStyled(…)` · `tPluralStyled(…)` · `tArrayStyled(…)` | `CharSequence` variants that keep inline markup |
+| `preload(lifecycleOwner)` · `preloadAll(lifecycleOwner)` | Launch loading in `lifecycleOwner.lifecycleScope`; return the `Job` |
+| `retranslate(activity)` · `retranslate(rootView)` | Re-apply translations to every view the wrapped inflater translated, in place |
+| `TolgeeAndroid.getKeyFromResources(context, id)` | The key name the SDK looks up for a resource id |
+
+Common members inherited from `Tolgee` (`t(key)`, `tFlow(key)`, `setLocale`, `getLocale`, `changeFlow`,
+`availableLocales`, `preload()`, `config`) are listed on the [API reference](/android-sdk/api).
+
+```kotlin
+val tolgee = Tolgee.instance
+val now = tolgee.t(this, R.string.welcome_user, name)                  // String, immediate
+lifecycleScope.launch {
+    tolgee.tFlow(this@MainActivity, R.string.welcome_user, name).collect { binding.title.text = it }
+}
+```
+
+## What does TolgeeContextWrapper intercept?
+
+`TolgeeContextWrapper.wrap(base)` returns a `ContextWrapper` whose `Resources` override `getString`, `getText`,
+`getQuantityString`, `getQuantityText`, `getStringArray` and `getTextArray`, and whose `LayoutInflater` translates
+`android:text`, `android:hint` and `android:contentDescription` during inflation and tags the view for `retranslate`.
+Strings with format placeholders are skipped by the inflater on purpose. When `Tolgee.instanceOrNull` is `null`, `wrap`
+returns a plain wrapper that changes nothing.
+
+| Member | Purpose |
+|---|---|
+| `TolgeeContextWrapper.wrap(base)` · `wrap(base, tolgee)` | Wrap an Activity (or any) context; the second form uses an explicit instance |
+| Constructor flags `interceptGetString`, `interceptGetText`, `argumentLayoutInflater` | Fine-grained control when constructing the wrapper directly |
+
+```kotlin
+override fun attachBaseContext(newBase: Context?) {
+    super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))
+}
+```
+
+## Which extension functions work with any context?
+
+Package `io.tolgee.common`, for code that does not run against a wrapped context (Application context, services,
+workers, ViewModels holding `Application`):
+
+| Extension | Returns |
+|---|---|
+| `Context.getStringT(id[, vararg args])` · `Resources.getStringT(…)` | Translated `String`, bundled fallback |
+| `Resources.getQuantityStringT(id, quantity[, vararg args])` | Plural |
+| `Resources.getStringArrayT(tolgee, id)` | Array |
+| `Context.getTextT(tolgee, id)` · `Resources.getTextT(tolgee, id[, def])` · `Resources.getQuantityTextT(tolgee, id, quantity)` · `Resources.getTextArrayT(tolgee, id)` | `CharSequence` variants |
+
+Overloads without a `tolgee` parameter use `Tolgee.instanceOrNull` and return the plain resource when it is `null`.
+
+## What does TolgeeStorageProviderAndroid do?
+
+`TolgeeStorageProviderAndroid(context, versionCode, path = "tolgee/localization-cache")` implements
+`TolgeeStorageProvider` with one file per CDN path under `filesDir/<path>/<versionCode>/`. A new version code starts
+with an empty directory. Nothing is set by default; pass it as `storage` in `contentDelivery { }`. Details in
+[Loading and caching](/android-sdk/caching).
+
+## How do I get the ChangeListener callback form?
+
+`Tolgee.ChangeListener` has one method, `onTranslationsChanged()`, called on the main thread after each load.
+`addChangeListener` and `removeChangeListener` on the instance register it, for Java code or classes without a
+coroutine scope. `changeFlow` is the coroutine form.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Is Tolgee.instance always a TolgeeAndroid?',
+      answer:
+        'On Android, yes. The common Tolgee.init creates the platform type, which on Android is TolgeeAndroid with the resource-id overloads.',
+    },
+    {
+      question: 'Does tFlow need the Activity context?',
+      answer:
+        'Any Context works; it is used to read the resource entry name and the bundled fallback. The application context is fine for text that outlives a screen.',
+    },
+    {
+      question: 'What does retranslate not update?',
+      answer:
+        'Text you set from code, and layout strings with placeholders that the inflater skipped. Use tFlow or the bindTolgee helper for those.',
+    },
+    {
+      question: 'Where are the full signatures and KDoc?',
+      answer:
+        'In the generated reference at tolgee.github.io/tolgee-mobile-kotlin-sdk; the TolgeeAndroid page lists every overload with the platforms it exists on.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Translating in Android Views](/android-sdk/integrations/android-views/translating) for the same API in use.
+- [API reference](/android-sdk/api) for the common `Tolgee` class and the configuration builders.
+- [Diagnostics](/android-sdk/agents/diagnostics) for confirming behaviour against the generated reference.

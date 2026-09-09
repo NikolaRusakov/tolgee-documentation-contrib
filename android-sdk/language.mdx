@@ -1,0 +1,138 @@
+---
+id: language
+title: Language and fallback in Tolgee Android SDK
+sidebar_label: Language and fallback
+description: "How Tolgee Android SDK picks the language: system locale, setLocale, BCP 47 fallback, defaultLanguage, and why availableLocaleTags matters."
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, locale, language, setLocale, fallback, bcp 47, availableLocaleTags, defaultLanguage, manifest]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK resolves the language to load in three steps: the requested locale, the device locale by default,
+is matched against the published languages, progressively shortened until one matches (`zh-Hans-CN` → `zh-Hans` →
+`zh`), and finally replaced by `defaultLanguage`. This page is for anyone configuring languages or debugging why a
+device shows the wrong one. It explains the resolution rules, where the list of published languages comes from, and what
+happens for a key that is missing in the resolved language.
+
+## Which language does Tolgee Android SDK use at start?
+
+The device locale, `Tolgee.systemLocale`, unless `Tolgee.init` sets one with `locale("cs")`. The value is kept in a
+locale flow; `getLocale()` returns it, and `setLocale(tag)` or `setLocale(locale)` replaces it at runtime. Tolgee
+Android SDK does not persist the choice; store the tag in your preferences and pass it to `locale()` on the next start
+if the app should remember it.
+
+```kotlin
+Tolgee.init {
+    locale("cs")                       // optional: initial language instead of the device locale
+    availableLocaleTags("en", "cs", "fr")
+    defaultLanguage("en")
+    contentDelivery { url = "https://cdn.tolg.ee/your-cdn-url-prefix" }
+}
+```
+
+## How does fallback work?
+
+Given a requested locale and the list of published languages, Tolgee Android SDK tries candidates in this order and
+stops at the first that is published:
+
+1. The exact tag: `zh-Hans-CN`.
+2. The tag with its rightmost component removed, repeatedly: `zh-Hans`.
+3. The base language: `zh`.
+4. `defaultLanguage`, if configured.
+
+Matching is case-insensitive, and the published tag's own casing is used for the CDN file name, so `en-us` on the
+device resolves to the published `en-US.json`. Examples:
+
+| Device | Published | Loaded |
+|---|---|---|
+| `en-US` | `en`, `cs` | `en` |
+| `zh-Hans-CN` | `zh-Hans`, `zh`, `en` | `zh-Hans` |
+| `pt-BR` | `pt-PT`, `en` with `defaultLanguage("en")` | `en` |
+| `sr-Cyrl` | `sr` | `sr` |
+| `de` | `en`, `cs` without `defaultLanguage` | nothing loads; every key falls back to the bundled resource |
+
+## Where does the list of published languages come from?
+
+Fallback needs a list to match against. Tolgee Android SDK takes it from, in order:
+
+1. `availableLocaleTags(...)` or `availableLocales(...)` in `Tolgee.init`.
+2. A `manifest.json` file next to the translation files, `{"locales": ["en", "cs"]}` in shape, fetched from the Content
+   Delivery at `manifestPath` (default: `manifest.json`).
+
+A Tolgee Content Delivery does not publish a manifest by default, and when the manifest fetch fails the SDK stops
+trying for the rest of the process. **Without either source, fallback is disabled**: the requested locale is used as
+is, so a device set to `en-US` requests `en-US.json`, receives 404, and shows bundled text. That is why every
+installation guide lists the published languages in `availableLocaleTags`.
+
+`Tolgee.instance.availableLocales` and `availableLocaleTags` return that list once it is known, and `null` before the
+first `preload` when it comes from the manifest.
+
+## What happens for a key that is missing?
+
+Resolution above chooses the *file* to load. Inside the file, a key that does not exist yields no translation, and
+every Android API returns the bundled resource for the device configuration: `getString` through the wrapper, `t(context,
+id)`, the Compose helpers. The key-based `t(key)` returns `null` instead, and `tFlow(key)` emits nothing for it. Keep
+`values-xx/strings.xml` folders in the app so the fallback text is in the right language.
+
+## How do I react to a language change?
+
+`setLocale` only updates the locale flow. Anything collecting `tFlow`, and every Compose helper, reloads on its own.
+Imperative Views code calls `preload(activity)` afterwards and updates when `changeFlow` emits; the base Activity in
+the [Views installation guide](/android-sdk/integrations/android-views/installation) does both. `ChangeListener` is
+the callback form for Java code; it runs on the main thread.
+
+In Compose, `setLocale` also accepts a `androidx.compose.ui.text.intl.Locale`, and `Tolgee.Config.Builder.locale`
+has the same overload.
+
+## How do I read or list languages at runtime?
+
+`getLocale()` returns the requested locale, not the resolved one: a device on `en-US` with `en` published reports
+`en-US` while the `en` file is loaded. `availableLocaleTags` lists what can be loaded; build a language menu from it
+rather than from a hard-coded array so a language published later appears without a release. `changeFlow` emits after
+each load, so a menu that shows the active language collects it and re-reads `getLocale()`.
+
+```kotlin
+val tags = Tolgee.instance.availableLocaleTags ?: emptyList()   // null before the first load when using a manifest
+val active = Tolgee.instance.getLocale().toTag("-")
+```
+
+## How do I add a language later?
+
+Publish it in the Content Delivery and add it to `availableLocaleTags`, or switch to a `manifest.json` on a custom CDN
+so the list is not hard-coded. The bundled fallback for a new language is the default `values/strings.xml` until you
+add a `values-xx` folder with `tolgee pull`.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Why does my app load English on a Czech device?',
+      answer:
+        'Either cs is not published in the Content Delivery, or it is missing from availableLocaleTags so fallback resolved to defaultLanguage. Publish it and list it.',
+    },
+    {
+      question: 'Does Tolgee Android SDK change the Android configuration locale?',
+      answer:
+        'No. It only changes which translations it serves. Date, number and resource-qualifier behaviour of the platform stays with the system locale unless your app changes it separately.',
+    },
+    {
+      question: 'What if I omit availableLocaleTags?',
+      answer:
+        'Fallback is disabled unless the Content Delivery serves a manifest.json. A device locale with a region, such as en-US, then requests a file that does not exist and the app shows bundled text.',
+    },
+    {
+      question: 'Is the language choice shared between Views and Compose screens?',
+      answer:
+        'Yes. The locale belongs to the Tolgee instance, which is one per process. A switch made in a Compose screen is visible to every Activity.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Switching language in Android Views](/android-sdk/integrations/android-views/switching-language) and
+  [in Jetpack Compose](/android-sdk/integrations/jetpack-compose/switching-language).
+- [Loading and caching](/android-sdk/caching): what happens after the language is resolved.
+- [Content Delivery](/android-sdk/content-delivery): publishing languages and the manifest.

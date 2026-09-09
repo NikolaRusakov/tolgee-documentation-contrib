@@ -1,0 +1,107 @@
+---
+id: api
+title: API for Jetpack Compose
+sidebar_label: API
+description: "The compose module of Tolgee Android SDK: every stringResource, pluralStringResource and stringArrayResource overload, plus the Compose Locale helpers."
+image: /img/og-images/jetpack-compose.png
+keywords: [tolgee, jetpack compose, api, stringResource, pluralStringResource, stringArrayResource, compose multiplatform, locale]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+The `compose` artifact of Tolgee Android SDK contains three composable functions and two locale helpers, all in the
+package `io.tolgee`, and depends on `core`. This page lists every overload for developers writing Compose code: the
+Android variants that take resource ids, the Compose Multiplatform variants that take `StringResource` objects, the
+explicit-instance forms, and what each returns before the translation has loaded.
+
+## What do the composables do?
+
+Each composable collects `tFlow` (or `tArrayFlow`) for the key as state, with the platform resource as the initial
+value. The first frame therefore shows the bundled text and the composable recomposes when the cache or the CDN
+answers, and again on every language change. When `Tolgee.instanceOrNull` is `null` (previews, tests), the composable
+returns the platform resource and never subscribes.
+
+| Composable | Android overloads | Compose Multiplatform overloads | Returns |
+|---|---|---|---|
+| `stringResource` | `(@StringRes id)` · `(id, vararg args)` | `(StringResource)` · `(StringResource, vararg args)` | `String` |
+| `pluralStringResource` | `(@PluralsRes id, quantity)` · `(id, quantity, vararg args)` | `(PluralStringResource, quantity)` · `(…, quantity, vararg args)` | `String`; `quantity` selects the form and is passed as `%1$d` |
+| `stringArrayResource` | `(@ArrayRes id)` | `(StringArrayResource)` | `Array<String>` on Android, `List<String>` in Multiplatform |
+
+Every overload also exists with a `tolgee: Tolgee` first parameter for an injected instance instead of the singleton.
+
+```kotlin
+import io.tolgee.pluralStringResource
+import io.tolgee.stringArrayResource
+import io.tolgee.stringResource
+
+Text(stringResource(R.string.description))
+Text(stringResource(R.string.percentage_placeholder, "87"))
+Text(pluralStringResource(R.plurals.plr_test_placeholder_2, passed, total, "Tests"))
+Text(stringArrayResource(R.array.array_test).joinToString())
+Text(stringResource(myTolgee, R.string.description)) // explicit instance
+```
+
+## How do the Compose Multiplatform overloads find the key?
+
+They read `resource.key`, the resource name generated into `Res.string.description`, and look it up exactly like the
+Android entry name. Push the `composeResources/values*/strings.xml` files with the Tolgee CLI in the `COMPOSE_XML`
+format so the names match. See [Compose Multiplatform](/android-sdk/integrations/jetpack-compose/multiplatform).
+
+```kotlin
+Text(stringResource(Res.string.description))
+Text(pluralStringResource(Res.plurals.plr_test_placeholder_2, 2, 10, "Plurals"))
+```
+
+## Which locale helpers exist?
+
+Two extension functions accept the Compose `androidx.compose.ui.text.intl.Locale` so Compose code does not have to
+convert to a language tag:
+
+| Helper | Purpose |
+|---|---|
+| `Tolgee.setLocale(composeLocale)` | Switch language from a Compose `Locale`, for example `Locale.current` |
+| `Tolgee.Config.Builder.locale(composeLocale)` | Initial language in `Tolgee.init` |
+
+`setLocale(tag)`, `getLocale()`, `changeFlow` and `tFlow` are inherited from the common `Tolgee` class; see the
+[API reference](/android-sdk/api).
+
+## How do I observe the language in a composable?
+
+`changeFlow` mapped to `getLocale()` and collected as state gives a value that recomposes on every language change:
+
+```kotlin
+val locale by tolgee.changeFlow.map { tolgee.getLocale() }.collectAsState(initial = tolgee.getLocale())
+```
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Do the composables need the Activity context to be wrapped?',
+      answer:
+        'No. They read through the Tolgee instance directly. TolgeeContextWrapper matters only for getString calls and XML layouts in the same app.',
+    },
+    {
+      question: 'Why is the plural quantity passed twice in the fallback?',
+      answer:
+        'Android and Compose Multiplatform expect the quantity as the first format argument when the text prints it. The Tolgee helper adds it for you; pass only the remaining arguments.',
+    },
+    {
+      question: 'Can I use the composables with an instance from Tolgee.new?',
+      answer:
+        'Yes. Every composable has an overload whose first parameter is the Tolgee instance, so several instances or an injected one work without touching the singleton.',
+    },
+    {
+      question: 'What do the composables return before the first load?',
+      answer:
+        'The platform resource for the current configuration. They recompose with the translation once the cache or the CDN has answered.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Translating in Jetpack Compose](/android-sdk/integrations/jetpack-compose/translating) for the composables in context.
+- [Compose Multiplatform](/android-sdk/integrations/jetpack-compose/multiplatform) for the `Res.string` variants.
+- [API reference](/android-sdk/api) for the common class and the configuration builders.

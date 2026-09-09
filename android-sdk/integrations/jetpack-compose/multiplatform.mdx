@@ -1,0 +1,216 @@
+---
+id: multiplatform
+title: Tolgee with Compose Multiplatform
+sidebar_label: Compose Multiplatform
+description: "Tolgee Android SDK in a Compose Multiplatform project: compose artifact in commonMain, Res.string resources pushed as COMPOSE_XML, platform differences."
+image: /img/og-images/jetpack-compose.png
+keywords: [tolgee, compose multiplatform, kotlin multiplatform, Res.string, COMPOSE_XML, stringResource, desktop, ios, wasm]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK is a Kotlin Multiplatform library, and its `compose` artifact works in Compose Multiplatform
+projects on Android, JVM desktop, iOS, macOS, JavaScript and Wasm. You add the artifact to `commonMain`, keep your
+strings in `composeResources`, push them to Tolgee in the `COMPOSE_XML` format, and use the same `stringResource`
+helpers with `Res.string` objects. This page is for anyone taking the Android integration to a shared Compose UI; it
+lists the steps and the three things that differ from a plain Android app.
+
+## Which platforms are supported?
+
+The `compose` artifact publishes `androidTarget`, `jvm`, `iosX64`, `iosArm64`, `iosSimulatorArm64`, `macosX64`,
+`macosArm64`, `js` and `wasmJs`. The `core` artifact it depends on targets more (tvOS, watchOS, Linux, Windows,
+Android Native) for non-Compose use. Resource-id overloads, `TolgeeContextWrapper` and `retranslate` exist on Android
+only; everything below is common code.
+
+## How do I add the dependency?
+
+```toml title="gradle/libs.versions.toml"
+[versions]
+tolgee = "<latest-version>" # https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk
+
+[libraries]
+tolgee-compose = { group = "io.tolgee.mobile-kotlin-sdk", name = "compose", version.ref = "tolgee" }
+```
+
+```kotlin title="composeApp/build.gradle.kts"
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation(libs.tolgee.compose)
+        }
+    }
+}
+
+compose.resources {
+    generateResClass = auto
+}
+```
+
+## How do I get the strings into Tolgee?
+
+Compose Multiplatform keeps strings in `composeResources/values*/strings.xml` and generates `Res.string.<name>`
+objects. Tolgee Android SDK looks a resource up by that name, so push the files in the `COMPOSE_XML` format and the
+keys match without mapping:
+
+```json title=".tolgeerc"
+{
+  "$schema": "https://docs.tolgee.io/cli-schema.json",
+  "projectId": 12345,
+  "format": "COMPOSE_XML",
+  "push": {
+    "filesTemplate": "./composeApp/src/commonMain/composeResources/values-{languageTag}/strings.xml",
+    "language": ["en", "cs", "fr"]
+  },
+  "pull": {
+    "path": ".",
+    "fileStructureTemplate": "./composeApp/src/commonMain/composeResources/values-{languageTag}/strings.{extension}"
+  }
+}
+```
+
+Create the Content Delivery in the **Android SDK** format, as for Android; it publishes the same `<language>.json`
+files with Android placeholders. The [Content Delivery guide](/android-sdk/content-delivery) covers the format rule and
+the curl check.
+
+## How do I initialize Tolgee?
+
+Put the configuration in one common function and call it from each platform entry point before the first composition:
+`Application.onCreate()` on Android, `main()` on desktop, the app delegate or the SwiftUI `App` initializer on iOS.
+
+```kotlin title="commonMain/Setup.kt"
+import io.tolgee.Tolgee
+
+object TolgeeSetup {
+    fun init(storage: TolgeeStorageProvider? = null) {
+        Tolgee.init {
+            contentDelivery {
+                url = "https://cdn.tolg.ee/your-cdn-url-prefix"
+                this.storage = storage          // see below; null means no persistent cache
+                availableLocaleTags("en", "cs", "fr")
+            }
+            defaultLanguage("en")
+        }
+    }
+}
+```
+
+```kotlin title="jvmMain/Main.kt"
+fun main() {
+    TolgeeSetup.init(storage = FileStorageProvider(File(System.getProperty("user.home"), ".myapp/tolgee")))
+    singleWindowApplication(title = "My app") { App() }
+}
+```
+
+```kotlin title="androidMain/MyApplication.kt"
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        TolgeeSetup.init(storage = TolgeeStorageProviderAndroid(this, BuildConfig.VERSION_CODE))
+    }
+}
+```
+
+## How do I read translations in shared composables?
+
+The same three imports as on Android, with `Res` objects instead of `R` ids:
+
+```kotlin title="commonMain/App.kt"
+import io.tolgee.Tolgee
+import io.tolgee.pluralStringResource
+import io.tolgee.stringResource
+import myapp.composeapp.generated.resources.Res
+import myapp.composeapp.generated.resources.description
+import myapp.composeapp.generated.resources.percentage_placeholder
+import myapp.composeapp.generated.resources.plr_test_placeholder_2
+
+@Composable
+fun App() {
+    val tolgee = Tolgee.instance
+    Column {
+        Text(stringResource(Res.string.description))
+        Text(stringResource(Res.string.percentage_placeholder, "87"))
+        Text(pluralStringResource(Res.plurals.plr_test_placeholder_2, 2, 10, "Plurals"))
+        Button(onClick = { tolgee.setLocale("fr") }) { Text("Français") }
+    }
+}
+```
+
+The helpers recompose when the language changes and fall back to the Compose resource when Tolgee is not initialized,
+so previews and tests behave as before.
+
+## What differs from a plain Android app?
+
+1. **No persistent cache is provided outside Android.** `storage` is `null` on every platform unless you set it, so
+   desktop, iOS and web re-download on every start and show bundled text offline. Implement the two-method
+   `TolgeeStorageProvider` interface per platform; the JVM example is in
+   [Loading and caching](/android-sdk/caching#how-does-persistent-storage-work). Android keeps
+   `TolgeeStorageProviderAndroid`.
+2. **No context wrapper, no `retranslate`.** Those work on Android `Resources` and `LayoutInflater`. In shared code
+   every string goes through the composables or `tFlow`, which is what a Compose UI does anyway.
+3. **Network permissions are platform concerns.** Android needs the network security config and the internet
+   permission from the [installation guide](/android-sdk/integrations/jetpack-compose/installation); desktop and iOS
+   need nothing; a browser target needs the CDN to answer with CORS headers, which the Tolgee CDN does.
+
+## How do I switch and observe the language in shared code?
+
+`setLocale` accepts a language tag or a Compose `Locale`, and the helpers recompose on their own. To show the active
+language, map `changeFlow` to `getLocale()` and collect it as state; the same code runs on every target.
+
+```kotlin
+@Composable
+fun LanguageMenu() {
+    val tolgee = Tolgee.instance
+    val active by tolgee.changeFlow.map { tolgee.getLocale() }.collectAsState(initial = tolgee.getLocale())
+    Row {
+        (tolgee.availableLocaleTags ?: listOf("en")).forEach { tag ->
+            Button(onClick = { tolgee.setLocale(tag) }, enabled = active.language != tag) { Text(tag) }
+        }
+    }
+}
+```
+
+The language is not persisted by the SDK; store the tag with your platform's settings mechanism and pass it to
+`locale(tag)` in `TolgeeSetup.init` on the next start.
+
+## How do I verify it?
+
+1. `./gradlew :composeApp:run` (desktop) shows the bundled text, then the translation from the Content Delivery.
+2. Tap the language button: every text rendered through the helpers recomposes.
+3. `./gradlew :composeApp:assembleDebug` and the iOS build succeed with the same shared code.
+
+The [Compose Multiplatform demo](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/multiplatform-compose)
+in the SDK repository is the reference for this page.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Is Compose Multiplatform officially supported?',
+      answer:
+        'The compose artifact is published for Android, JVM, iOS, macOS, JS and Wasm and the SDK repository has a Compose Multiplatform demo. Android is the most exercised target; treat the others as pre-1.0 like the SDK itself.',
+    },
+    {
+      question: 'Can I use the same Tolgee project for the Android app and the desktop app?',
+      answer:
+        'Yes. One project, one Content Delivery in the Android SDK format, one set of keys pushed as COMPOSE_XML from the shared composeResources folder.',
+    },
+    {
+      question: 'Why do I need my own storage provider on desktop or iOS?',
+      answer:
+        'Tolgee Android SDK ships a file-based provider for Android only. The interface has two methods, put and get, so a platform implementation is a few lines.',
+    },
+    {
+      question: 'Do the plural helpers behave the same on every platform?',
+      answer:
+        'Yes. The plural category is chosen by the CLDR rules that ship with the SDK from the loaded language, independent of the platform.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [API for Jetpack Compose](/android-sdk/integrations/jetpack-compose/api) for every overload.
+- [Loading and caching](/android-sdk/caching) for the storage provider and the load sequence.
+- [Content Delivery](/android-sdk/content-delivery) for the format and the curl check.
