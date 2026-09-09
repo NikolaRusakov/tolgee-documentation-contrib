@@ -8,10 +8,12 @@ llm_prompt: "Read {url} and use it to diagnose why Tolgee translations are not b
 keywords: [tolgee, android, troubleshooting, diagnostics, llms-full.txt, dokka, api reference, ai agent]
 ---
 
+import FaqSection from '@site/src/component/docs/FaqSection';
+
 Use this page when translations do not behave as expected, or before answering a question about what the SDK does.
 It has two parts: a procedure to establish facts from the API reference and the source, and a symptom table.
 
-## Establish facts before changing code
+## How do I establish facts before changing code?
 
 The SDK is small; most questions are answered by reading the relevant type page rather than guessing.
 
@@ -37,7 +39,7 @@ The SDK is small; most questions are answered by reading the relevant type page 
    [`demo/examplejetpack`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/examplejetpack)) when
    the behaviour might depend on the host app.
 
-## Facts worth knowing when debugging
+## What does the SDK do before data arrives?
 
 - Loading is lazy and asynchronous: `t(...)` returns the fallback until `preload`, `tFlow`, or a Compose helper has
   loaded the locale. The load path is manifest (`manifest.json`, optional) → resolve locale with BCP 47 fallback →
@@ -56,13 +58,13 @@ The SDK is small; most questions are answered by reading the relevant type page 
   (`TolgeeMessageParams.Mapped`) require `Formatter.ICU`.
 - CDN responses are cached at the edge for up to about 15 minutes after publishing.
 
-## Symptom table
+## Which symptom points to which cause?
 
 | Symptom | Likely cause | Confirm | Fix |
 |---|---|---|---|
 | All texts are the bundled ones | `Tolgee.init` not run before the first screen; CDN prefix wrong; delivery not published | `curl -I <prefix>/en.json` returns 200? Is `MyApplication` registered in the manifest? | Initialize in `Application.onCreate()`; fix prefix; publish the delivery |
 | Bundled text on first frame, translated afterwards | Expected: asynchronous load | `changeFlow` emits shortly after start | Call `preload(activity)` early (`onStart`) or accept the reactive update |
-| Only some texts translate | Non-wrapped context (Application, Service, ViewModel) or a screen created before init | Search for `applicationContext.getString`, `context.getString` outside Activities | Use `getStringT` / `t(context, id)` or wrap that context ([migration step 3](./migrate-strings.mdx#3-convert-lookups-that-run-outside-an-activity)) |
+| Only some texts translate | Non-wrapped context (Application, Service, ViewModel) or a screen created before init | Search for `applicationContext.getString`, `context.getString` outside Activities | Use `getStringT` / `t(context, id)` or wrap that context ([migration step 3](/android-sdk/migrate-existing-app#3-convert-lookups-that-run-outside-an-activity)) |
 | Layout text does not change after `setLocale` | No `retranslate`/`recreate` on `changeFlow`, or `preload` not called after switching | Add logging in the `changeFlow` collector | Collect `changeFlow` and call `retranslate(activity)`; Views need `preload` after `setLocale` |
 | `CLEARTEXT communication … not permitted` / SSL handshake error | CDN host not allowed in `network_security.xml` | Manifest references `@xml/network_security`? Domains include `tolgee.io`, `tolg.ee`, custom host? | Add the domain; keep `https` |
 | HTTP 403/404 from the CDN | Wrong prefix, delivery deleted, or a namespaced delivery URL | `curl -I <prefix>/en.json` | Copy the prefix from Developer settings → Content Delivery; use a namespace-less delivery |
@@ -84,8 +86,30 @@ CDN prefix redacted, the output of `curl -I <prefix>/en.json`, whether `availabl
 relevant symptom row above. Open issues at
 [github.com/tolgee/tolgee-mobile-kotlin-sdk/issues](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/issues).
 
-## Related
+## Frequently asked questions
 
-- [Troubleshooting (Views)](../troubleshooting.mdx), [Troubleshooting (Compose)](../jetpack/troubleshooting.mdx)
-- [API quick reference](./api-reference.mdx)
-- [Production guide](../production.mdx)
+<FaqSection
+  items={[
+    {
+      question: 'Why does t(...) return the bundled string right after start?',
+      answer:
+        'Loading is lazy and asynchronous. Until preload, tFlow or a Compose helper has loaded the locale, every immediate lookup returns the fallback. Collect changeFlow or use the reactive APIs.',
+    },
+    {
+      question: 'How do I confirm what the SDK receives from the CDN?',
+      answer:
+        'Fetch <prefix>/<languageTag>.json with curl. A JSON object is correct; XML or 404 means the Content Delivery, not the app, is wrong.',
+    },
+    {
+      question: 'Where do I look up what a method does?',
+      answer:
+        'In the generated reference index at tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt; each line links to the Markdown page of the type with every member and its KDoc.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Troubleshooting](/android-sdk/troubleshooting)
+- [API reference](/android-sdk/api)
+- [Production guide](/android-sdk/production)

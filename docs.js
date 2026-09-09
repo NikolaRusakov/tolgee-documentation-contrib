@@ -63,9 +63,11 @@ const docs = [
       lastVersion: 'current',
       includeCurrentVersion: true,
       editUrl: 'https://github.com/tolgee/documentation/tree/main',
+      // Visible "Last updated" date on every Android SDK page (from git history).
+      showLastUpdateTime: true,
       versions: {
         current: {
-          label: 'Android SDK',
+          label: '1.x.x',
           banner: 'none',
         },
       },

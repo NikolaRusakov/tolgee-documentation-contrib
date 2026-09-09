@@ -1,0 +1,48 @@
+---
+id: get-started
+title: Get started with Tolgee Android SDK
+sidebar_label: Get started
+description: Choose the Tolgee Android SDK guide for your app, Android Views or Jetpack Compose, and check the three things you need from the Tolgee Platform first.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, get started, android views, jetpack compose, content delivery]
+---
+
+Tolgee Android SDK ships as two artifacts, `core` for Android Views and `compose` for Jetpack Compose, and each has
+its own step-by-step guide. This page is for anyone starting an integration. It tells you which guide to open and what
+to prepare in the Tolgee Platform before you change any code. You get to the right installation page in under a minute
+and arrive there with a working Content Delivery URL.
+
+## Which guide should I follow?
+
+| Your app | Open this guide |
+|---|---|
+| Activities, Fragments and XML layouts, with or without a ViewModel | [Install Tolgee Android SDK in an Android Views app](/android-sdk/integrations/android-views/installation) |
+| Jetpack Compose screens | [Install Tolgee Android SDK in a Jetpack Compose app](/android-sdk/integrations/jetpack-compose/installation) |
+| Both toolkits in one app | Follow the Compose guide, then the "wrap the Activity context" step of the Views guide |
+| An existing app with hundreds of `getString` calls | Install first, then [migrate the existing app](/android-sdk/migrate-existing-app) pattern by pattern |
+| Compose Multiplatform | The Compose guide; the Multiplatform notes are marked in it |
+
+## What do I need from the Tolgee Platform first?
+
+Every guide starts from the same three things. Prepare them once per project in the Tolgee Platform; the
+[Content Delivery guide](/android-sdk/content-delivery) explains each in detail.
+
+1. **A project with your keys.** Install the [Tolgee CLI](/tolgee-cli/installation) and push `res/values/strings.xml`
+   with `format: "ANDROID_XML"`. Key names equal the `name` attributes in the file.
+2. **A Content Delivery in the "Android SDK" format.** It publishes one JSON file per language at a public URL prefix.
+   Tolgee Android SDK reads JSON only; a delivery in another format produces an app that silently shows bundled text.
+3. **The URL prefix and the list of published languages.** Both go into `Tolgee.init` in the Application class.
+
+## How long does it take?
+
+With the three items above ready, the installation guides take about fifteen minutes each. The two
+[starter apps](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters) go from clone to a
+translation arriving over the air in under thirty minutes, including the platform steps, and their README is the
+playbook the guides follow.
+
+## Next steps
+
+- [Content Delivery](/android-sdk/content-delivery): create the CDN endpoint and verify it with one command.
+- [Tolgee with Android Views](/android-sdk/integrations/android-views) or
+  [Tolgee with Jetpack Compose](/android-sdk/integrations/jetpack-compose).
+- [Production guide](/android-sdk/production) before the first release.

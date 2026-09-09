@@ -1,67 +1,124 @@
 ---
 id: production
-title: Production guide
-description: OTA updates, caching, formatting, and deployment tips for shipping to production.
+title: Tolgee Android SDK in production
+sidebar_label: Production
+description: "How to ship Tolgee Android SDK: one Content Delivery per environment, cache invalidation by version code, offline behaviour, formatter, testing."
 image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, production, over the air updates, caching, offline, sprintf, icu, network security, testing]
 ---
 
-This guide summarizes recommendations for using Tolgee Android SDK in production.
+import FaqSection from '@site/src/component/docs/FaqSection';
 
-## Over‑the‑air (OTA) updates & caching
+Tolgee Android SDK is designed so that a production app never depends on the network to show text: translations are
+cached on the device and the bundled resources remain the fallback. This page is for anyone preparing the first
+release with Tolgee Android SDK. It covers one Content Delivery URL per environment, how the cache is invalidated, what
+the user sees offline, the formatter choice, network security, and how to test without a CDN.
 
-- **CDN**: Configure your CDN URL prefix and a stable path per project/environment.
-- **Caching**: Use `TolgeeStorageProviderAndroid(context, BuildConfig.VERSION_CODE)` so cache invalidates on app updates.
-- **Offline behavior**: SDK serves cached values when offline; provide static fallbacks where needed.
+## How do I separate environments?
 
-```kotlin
-Tolgee.init {
-  contentDelivery {
-    url = "https://cdn.tolg.ee/your-cdn-url-prefix"
-    storage = TolgeeStorageProviderAndroid(appContext, BuildConfig.VERSION_CODE)
-  }
-}
-```
+Create one Content Delivery per environment in the Tolgee Platform and inject the URL prefix at build time through
+`BuildConfig`, as shown in the [Content Delivery guide](/android-sdk/content-delivery). Nothing in the source code
+then names an environment, and a release build cannot accidentally read the staging translations.
 
-## Formatting mode (Sprintf vs ICU)
+## How is the cache invalidated?
 
-- **Sprintf**: Natural when your source data comes from Android XML (`%s`, `%d`, plurals).
-- **ICU**: Use when your data uses Tolgee Universal ICU placeholders.
+`TolgeeStorageProviderAndroid(context, BuildConfig.VERSION_CODE)` writes the downloaded JSON under `filesDir`, keyed by
+the version code. A new version code starts with an empty cache, so strings added in the new release are never served
+from a stale file. Within one version, every successful fetch overwrites the cached copy of that language.
 
 ```kotlin
 Tolgee.init {
-  contentDelivery {
-    // Default is Sprintf for Android-style placeholders
-    format(Tolgee.Formatter.Sprintf)
-    // Or switch to ICU:
-    // format(Tolgee.Formatter.ICU)
-  }
+    contentDelivery {
+        url = BuildConfig.TOLGEE_CDN_URL
+        storage = TolgeeStorageProviderAndroid(this@MyApplication, BuildConfig.VERSION_CODE)
+    }
 }
 ```
 
-See also: [Android XML format](/platform/formats/android_xml) · [Tolgee Universal ICU placeholders](/platform/translation_process/tolgee_universal_icu_placeholders)
+## What does the user see offline?
 
-## Preloading & startup
+1. The last cached translations for the resolved language, if a previous run downloaded them.
+2. Otherwise the bundled Android resource for the device configuration.
 
-- Preload critical namespaces/locales on splash or application init.
-- Defer non-critical content until after first frame to keep startup fast.
-- Show fallback strings while loading.
+The first frame after a cold start always shows the bundled or cached text; the CDN response replaces it within the
+same screen. Keep `values-xx/strings.xml` in the app and run `tolgee pull` before a release if the bundled fallbacks
+should match the platform.
 
-## Environments
+## Which formatter should I use?
 
-- Use separate CDN prefixes for dev/staging/prod.
-- Verify cache busting between releases (via `BuildConfig.VERSION_CODE`).
+`Tolgee.Formatter.Sprintf`, the default, formats Android placeholders (`%1$s`, `%d`) and is what a Content Delivery in
+the "Android SDK" format publishes. Switch to `Tolgee.Formatter.ICU` only if the delivery exports ICU messages with
+named parameters; then `TolgeeMessageParams.Mapped` works and positional arguments still do. Mixing them shows
+placeholders literally.
 
-## Error handling
+## What about network security?
 
-- Log fetch failures and fall back to cache/static values.
-- Consider retry/backoff for transient network errors.
+List only the hosts the app needs in `res/xml/network_security.xml`: `tolgee.io` and `tolg.ee` for Tolgee Cloud, or
+your own host for a self-hosted CDN. The Content Delivery URL is public; Tolgee API keys are used by the Tolgee CLI in
+CI and never enter the APK. For a self-hosted setup make sure the CDN serves HTTPS; see
+[self-hosting](/platform/self_hosting/getting_started).
 
-## Security & networking
+## How do I keep startup fast?
 
-- Add only required domains in your `network_security.xml`.
-- For self-hosting, ensure TLS and set correct domain(s). See [Self‑hosting](/platform/self_hosting/getting_started).
+`preload(activity)` in `onStart` of the entry Activity fetches the current language, cache first. It does not block
+the first frame. `preloadAll` warms every published language and is worth it only for apps with a language switch on
+the first screen. Do not resolve strings before `Application.onCreate()` completes.
 
-## Testing
+## How do I test an app that uses Tolgee Android SDK?
 
-- Provide test doubles for content delivery to return deterministic values.
-- For UI tests, inject a test Tolgee instance with preloaded data.
+- **Unit tests and previews** run without `Tolgee.init`, so every API returns the bundled resource and existing
+  expectations stay valid.
+- **Deterministic UI tests**: create an instance with `Tolgee.new { }` and a custom `network { client(...) }` that
+  serves fixture JSON, and pass it explicitly to the overloads that accept a `Tolgee` parameter.
+- **Manual release check**: change one translation in the platform, publish, cold-start the release build, and confirm
+  the new text; then enable airplane mode on a fresh install and confirm the bundled text with no error.
+
+## What should the release checklist contain?
+
+1. `tolgee push` has run so every key in `strings.xml` exists on the platform, and the Content Delivery for production
+   is published for every language the app lists in `availableLocaleTags`.
+2. The release build reads `TOLGEE_CDN_PROD`, verified with the curl check against that prefix, not the staging one.
+3. The version code was bumped, so the on-device cache of the previous release is not reused.
+4. `network_security.xml` lists only the hosts the app talks to.
+5. One manual run of the release build online, then one on a fresh install in airplane mode.
+
+## How do I roll back a bad translation?
+
+Fix the text in the Tolgee Platform and publish the Content Delivery again. Devices that fetch after the CDN edge
+refreshes, within about fifteen minutes, receive the corrected file, and nothing has to be released. A whole language
+can be unpublished the same way; devices then fall back to the bundled resource for it. For an emergency without
+platform access, the bundled strings are what users see when the delivery is unreachable, which is one more reason to
+keep them current.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Can a bad translation on the platform crash the app?',
+      answer:
+        'No. A missing key or an unparsable file makes the SDK return the bundled resource. A placeholder mismatch shows the placeholder literally, which is why the formatter must match the delivery format.',
+    },
+    {
+      question: 'Do I need a new release when I add a language?',
+      answer:
+        'No, as long as availableLocaleTags is not hard-coded or the delivery serves a manifest. Publish the language in the Content Delivery; devices pick it up on the next preload.',
+    },
+    {
+      question: 'How much does the SDK download?',
+      answer:
+        'One JSON file per language that is actually used, on cold start or preload, and only when the CDN answers. The file is cached on the device afterwards.',
+    },
+    {
+      question: 'Should I bump the version code to reset the cache?',
+      answer:
+        'Only through a normal release. The cache is keyed by version code on purpose so that each release starts clean; there is no runtime reset API.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Content Delivery](/android-sdk/content-delivery): per-environment URLs and the curl check.
+- [Troubleshooting](/android-sdk/troubleshooting) for symptoms seen in the field.
+- [API reference](/android-sdk/api) for `Tolgee.Config.ContentDelivery.Builder`.

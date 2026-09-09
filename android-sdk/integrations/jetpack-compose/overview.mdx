@@ -1,0 +1,38 @@
+---
+id: overview
+title: Tolgee with Jetpack Compose
+sidebar_label: Overview
+slug: /integrations/jetpack-compose
+description: How Tolgee Android SDK integrates with Jetpack Compose and Compose Multiplatform through the compose artifact and three drop-in stringResource helpers.
+image: /img/og-images/jetpack-compose.png
+keywords: [tolgee, jetpack compose, compose multiplatform, stringResource, pluralStringResource, over the air translations]
+---
+
+import StarterBanner from '@site/android-sdk/shared/StarterBanner';
+
+Tolgee Android SDK supports Jetpack Compose and Compose Multiplatform through the
+`io.tolgee.mobile-kotlin-sdk:compose` artifact, which includes `core`. You initialize Tolgee once in the Application
+class and replace three imports: `stringResource`, `pluralStringResource` and `stringArrayResource` from `io.tolgee`
+instead of `androidx.compose.ui.res`. Call sites stay identical, composables recompose when translations or the
+language change, and previews keep working through the built-in fallback.
+
+<StarterBanner starter="jetpack-compose" label="Jetpack Compose" />
+
+## What does the compose artifact give a Compose app?
+
+- **Drop-in helpers** with the same signatures as the Compose originals, so a migration is an import change.
+- **Reactivity for free.** Each helper collects `tFlow` as state, with the bundled resource as initial value, so a
+  language switch recomposes every text without any wiring.
+- **Fallback in previews and tests.** When `Tolgee` is not initialized, the helpers delegate to the platform composable.
+- **Explicit instance overloads** for apps that inject a `Tolgee` instance instead of using the singleton.
+- **Compose Multiplatform** support with `Res.string.*` and `Res.plurals.*` resources.
+
+## Where do I go next?
+
+1. [Installation](/android-sdk/integrations/jetpack-compose/installation): dependency, network config,
+   `Tolgee.init`, the three imports, first translated composable.
+2. [Translating](/android-sdk/integrations/jetpack-compose/translating): parameters, plurals, arrays, text outside
+   composables, ViewModels.
+3. [Switching language](/android-sdk/integrations/jetpack-compose/switching-language): a locale switcher composable
+   and how recomposition follows.
+4. [Migrate an existing app](/android-sdk/migrate-existing-app) for apps that mix Compose with Views.

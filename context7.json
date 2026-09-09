@@ -26,7 +26,7 @@
     "Android SDK: the Content Delivery must use the 'Android SDK' (JSON) format; the SDK does not parse strings.xml from the CDN.",
     "Android SDK: Compose helpers stringResource / pluralStringResource / stringArrayResource are imported from package io.tolgee, replacing androidx.compose.ui.res.",
     "Android SDK: keys are Android resource entry names; keep strings.xml as the fallback and push it with the Tolgee CLI (format ANDROID_XML).",
-    "Prefer the task recipes under android-sdk/agents for install and migration work; the Markdown index of all pages is https://docs.tolgee.io/llms.txt.",
+    "Android SDK: follow the installation pages under android-sdk/integrations (android-views, jetpack-compose) and android-sdk/migrate-existing-app for install and migration work; the Markdown index of all pages is https://docs.tolgee.io/llms.txt.",
     "The Tolgee MCP server (https://app.tolgee.io/mcp/developer, header X-API-Key) can list projects, keys and translations and create or translate keys; never commit the API key."
   ],
   "previousVersions": []

@@ -1,0 +1,165 @@
+---
+id: translating
+title: Translating in Jetpack Compose
+sidebar_label: Translating
+description: How to translate static, parameterized, plural and array strings in Jetpack Compose with the Tolgee stringResource helpers, and text outside composables.
+image: /img/og-images/jetpack-compose.png
+keywords: [tolgee, jetpack compose, stringResource, pluralStringResource, stringArrayResource, viewmodel, tFlow]
+---
+
+import StarterBanner from '@site/android-sdk/shared/StarterBanner';
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK translates strings in Jetpack Compose through three composable helpers in the `io.tolgee` package:
+`stringResource`, `pluralStringResource` and `stringArrayResource`. They take the same arguments as the Compose
+originals, return the translation from the Tolgee Content Delivery, recompose when translations or the language change,
+and fall back to the bundled resource. Text outside composables uses `tFlow`. This page shows each case with the code
+from the Compose starter app.
+
+<StarterBanner starter="jetpack-compose" label="Jetpack Compose" />
+
+## How do I read a translation in a composable?
+
+Import the helper from `io.tolgee` and pass the resource id. Tolgee Android SDK looks the key up by the resource entry
+name, so `R.string.description` is the key `description` in your Tolgee project.
+
+```kotlin
+import io.tolgee.stringResource
+
+@Composable
+fun Description() {
+    Text(stringResource(R.string.description))
+}
+```
+
+The composable renders the bundled string on the first frame and recomposes with the Tolgee text as soon as the cache
+or the CDN answers.
+
+## How do I pass parameters to a translation?
+
+Pass the arguments after the id. The default Sprintf formatter fills `%1$s`, `%2$d` and `%.2f` placeholders in the
+same order as `getString`.
+
+```kotlin
+Text(stringResource(R.string.percentage_placeholder, progress.toString())) // "Progress: %1$s %%"
+```
+
+## How do I translate plurals?
+
+`pluralStringResource(id, quantity, vararg formatArgs)` selects the CLDR form for the current language from `quantity`
+and passes `quantity` as `%1$d`, exactly like `Resources.getQuantityString(id, quantity, quantity, …)`. Pass only the
+remaining arguments.
+
+```kotlin
+import io.tolgee.pluralStringResource
+
+// "%3$s: %1$d tests out of %2$d ok"
+Text(pluralStringResource(R.plurals.plr_test_placeholder_2, passed, total, "Tests"))
+```
+
+Only one plural per string is supported, matching Android resources.
+
+## How do I translate a string array?
+
+```kotlin
+import io.tolgee.stringArrayResource
+
+Text(stringArrayResource(R.array.array_test).joinToString())
+```
+
+On Android the helper returns `Array<String>`; in Compose Multiplatform it returns `List<String>`.
+
+## How does a string reach the composable?
+
+`stringResource(R.string.description)` resolves in three steps. It reads the bundled resource for the current
+configuration and uses it as the initial state, so the first frame is never empty. It then collects
+`tolgee.tFlow(context, id)`: the SDK looks the key `description` up in the in-memory copy of the current language,
+in the on-device cache if nothing is loaded yet, and finally fetches `<languageTag>.json` from the Content Delivery.
+Each answer that differs from the current text triggers a recomposition. When the language changes, the flow emits
+again, which is why no `preload` call is needed in Compose.
+
+## How do I add a new string?
+
+Add it to `res/values/strings.xml`, reference it with `stringResource(R.string.new_key)`, push the file with
+`tolgee push`, and translate it in the Tolgee Platform. The Content Delivery publishes the translation and the
+composable shows it after the next load, with the bundled text in between. Compose Multiplatform projects add the
+string to `composeResources/values/strings.xml` and push with `format: "COMPOSE_XML"`.
+
+## How do I use an explicit Tolgee instance?
+
+Every helper has an overload whose first parameter is a `Tolgee` instance, for apps that create one with `Tolgee.new`
+and inject it instead of using the singleton.
+
+```kotlin
+@Composable
+fun Greeting(tolgee: Tolgee) {
+    Text(stringResource(tolgee, R.string.description))
+}
+```
+
+## How do I translate text outside a composable?
+
+The window title, notifications and other imperative strings are not composables. Drive them from `tFlow`, which
+emits the current text and re-emits on every change, in the Activity's `lifecycleScope`.
+
+```kotlin title="MainActivity.kt"
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    Tolgee.instanceOrNull?.let { tolgee ->
+        lifecycleScope.launch {
+            tolgee.tFlow(this@MainActivity, R.string.app_name).collect { title = it }
+        }
+    }
+    setContent { MaterialTheme { StarterScreen() } }
+}
+```
+
+For one-off reads outside the UI, for example in a `Service`, use the `io.tolgee.common` extensions:
+`context.getStringT(R.string.key, args)` and `context.resources.getQuantityStringT(R.plurals.key, n, n)`.
+
+## How do I use translations in a ViewModel?
+
+Keep resource ids and their arguments in UI state and let the composable resolve them; a language change then
+recomposes without the ViewModel knowing. If the ViewModel must produce text, expose `tolgee.tFlow(application, id,
+args)` as a `StateFlow<String>` and collect it with `collectAsState` in the composable. The application context needs no
+wrapper.
+
+```kotlin
+class MainViewModel(app: Application) : AndroidViewModel(app) {
+    val title: StateFlow<String> = (Tolgee.instanceOrNull?.tFlow(app, R.string.app_name) ?: flowOf(app.getString(R.string.app_name)))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), app.getString(R.string.app_name))
+}
+```
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'What happens in a @Preview or a unit test?',
+      answer:
+        'Tolgee is not initialized there, so the helpers delegate to the androidx.compose.ui.res composables and render the bundled resource. No mocking is needed.',
+    },
+    {
+      question: 'Why does my plural show the wrong form?',
+      answer:
+        'The count was passed only as a format argument. The second parameter of pluralStringResource is the quantity that selects the form; it is also passed as %1$d, so pass only the remaining arguments after it.',
+    },
+    {
+      question: 'Can I still use LocalContext.current.getString?',
+      answer:
+        'It returns the bundled string unless the Activity context is wrapped with TolgeeContextWrapper. Prefer the io.tolgee stringResource helper, which also recomposes on changes.',
+    },
+    {
+      question: 'How do I translate a string that contains styling?',
+      answer:
+        'The helpers return plain String. For styled text read the translation with stringResource and build an AnnotatedString in the composable, or use tStyled on the Tolgee instance outside Compose.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Switching language](/android-sdk/integrations/jetpack-compose/switching-language).
+- [Migrate an existing app](/android-sdk/migrate-existing-app) to convert every `androidx.compose.ui.res` import and the Views screens.
+- [API reference](/android-sdk/api) for the compose module.

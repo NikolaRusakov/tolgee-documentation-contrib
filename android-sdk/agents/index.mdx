@@ -7,6 +7,8 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android, llm, ai agent, llms.txt, claude code, cursor, copilot]
 ---
 
+import FaqSection from '@site/src/component/docs/FaqSection';
+
 This section is written for LLM coding agents (Claude Code, Cursor, Copilot, Codex, Gemini and similar) and for the
 people who drive them. Every page is a self-contained, task-shaped recipe: prerequisites, a detection step, numbered
 steps with complete code, a verification step and a troubleshooting table.
@@ -16,35 +18,38 @@ Do not rely on training data for this SDK; it is pre-1.0 and changes between rel
 pages you need (every page below has a `.md` twin) and follow the recipes literally.
 :::
 
-## Machine-readable entry points
+## Where are the machine-readable entry points?
 
 | What | URL | Use it for |
 |---|---|---|
 | Index of all docs pages | [`https://docs.tolgee.io/llms.txt`](https://docs.tolgee.io/llms.txt) | Discover pages; each line is `[title](url): description` |
 | Full text of all docs pages | [`https://docs.tolgee.io/llms-full.txt`](https://docs.tolgee.io/llms-full.txt) | Load everything at once (large) |
-| Markdown twin of any page | append `.md` to the page URL, e.g. `https://docs.tolgee.io/android-sdk/agents/install-views.md` | Read one page without HTML |
+| Markdown twin of any page | append `.md` to the page URL, e.g. `https://docs.tolgee.io/android-sdk/integrations/android-views/installation.md` | Read one page without HTML |
 | SDK API reference index | [`https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt) | Find a class or function and its one-line KDoc summary |
 | SDK API reference, full text | [`https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt) | Investigate behaviour: signatures, KDoc, platform availability of every member |
-| SDK API reference, one page | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/core/-core/io.tolgee/-tolgee/index.md` (scheme in the [API quick reference](./api-reference.mdx)) | Read a single type page (see [API quick reference](./api-reference.mdx)) |
+| SDK API reference, one page | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/core/-core/io.tolgee/-tolgee/index.md` (scheme in the [API reference](/android-sdk/api)) | Read a single type page (see [API reference](/android-sdk/api)) |
 | Public API dumps | [`core/api/android/core.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/core/api/android/core.api), [`compose/api/android/compose.api`](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/master/compose/api/android/compose.api) | Exact binary API surface of a release |
 | Tolgee MCP server | `https://app.tolgee.io/mcp/developer` (header `X-API-Key`), see [MCP server setup](/platform/integrations/mcp_server/setup) | Let the agent read and write the Tolgee project itself: list projects, keys and translations, create keys, run machine translation |
 | Context7 | `tolgee/documentation` and `tolgee/tolgee-mobile-kotlin-sdk` on [context7.com](https://context7.com) | Agents with the Context7 MCP resolve the library id and pull current docs snippets without leaving the IDE |
 
 Every page also has a **Copy page** menu at the top: copy the Markdown, open the page in ChatGPT, Claude, Perplexity or
-Cursor, or copy a ready-made prompt for Claude Code, Copilot, Codex and Gemini CLI. Recipe pages carry a task-specific
+Cursor, or copy a ready-made prompt for Claude Code, Copilot, Codex and Gemini CLI. Installation and migration pages carry a task-specific
 prompt ("follow this recipe to integrate the SDK") instead of the generic "read this page" one.
 
-## Recipes
+## Which pages are the recipes?
 
-| Recipe | Task |
+Every installation and migration page carries a task prompt in its **Copy page** menu and follows the same shape:
+prerequisites, detection commands, numbered steps with complete code, verification, and what can go wrong.
+
+| Page | Task |
 |---|---|
-| [Install the SDK in an Android Views app](./install-views.mdx) | Add the `core` artifact, network config, `Tolgee.init`, context wrapping; verify one translated string |
-| [Install the SDK in a Jetpack Compose app](./install-compose.mdx) | Add the `compose` artifact, `Tolgee.init`, swap `stringResource` imports; verify a locale switch |
-| [Migrate resource strings to Tolgee](./migrate-strings.mdx) | Inventory every string lookup in an existing app and route each pattern through the SDK |
-| [API quick reference](./api-reference.mdx) | Compact table of the public API with links into the generated Markdown reference |
-| [Diagnostics](./diagnostics.mdx) | Symptom, cause, fix and how to confirm, including how to query the API reference |
+| [Install Tolgee Android SDK in an Android Views app](/android-sdk/integrations/android-views/installation) | Add the `core` artifact, network config, `Tolgee.init`, context wrapping; verify one translated string |
+| [Install Tolgee Android SDK in a Jetpack Compose app](/android-sdk/integrations/jetpack-compose/installation) | Add the `compose` artifact, `Tolgee.init`, swap `stringResource` imports; verify a locale switch |
+| [Migrate an existing app](/android-sdk/migrate-existing-app) | Inventory every string lookup in an existing app and route each pattern through the SDK |
+| [API reference](/android-sdk/api) | Map of the public API with links into the generated Markdown reference |
+| [Diagnostics](/android-sdk/agents/diagnostics) | Symptom, cause, fix and how to confirm, including how to query the API reference |
 
-## Facts that agents get wrong
+## Which facts do agents get wrong?
 
 These are the corrections that matter most. Each is verified against the SDK source of the current release.
 
@@ -65,11 +70,11 @@ These are the corrections that matter most. Each is verified against the SDK sou
   `getString`) returns the bundled Android string when the key is missing or the CDN is unreachable.
 - **Namespaces are not supported** by the SDK; publish a single, namespace-less Content Delivery.
 - **The Gradle/compiler plugin that rewrites `getString()` calls at compile time is not released**; do the migration
-  in source as described in [Migrate resource strings](./migrate-strings.mdx).
+  in source as described in [Migrate an existing app](/android-sdk/migrate-existing-app).
 - **Minimum Android API level is 21.** The current release is `1.0.0-alpha04`; resolve the latest version from
   [Maven Central](https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk), never from memory.
 
-## Give the agent access to your Tolgee project (MCP)
+## How do I give the agent access to my Tolgee project?
 
 The [Tolgee MCP server](/platform/integrations/mcp_server/about) is built into Tolgee Cloud and every self-hosted
 instance. With it connected, the agent can check that the keys used by the app exist, create missing ones, read the
@@ -101,7 +106,7 @@ What the MCP server does **not** do: publish a Content Delivery or hand out its 
 **Developer settings → Content Delivery** (format **Android SDK**) and pass its URL to the agent. Without MCP the
 same key sync is done with the [Tolgee CLI](/tolgee-cli/installation) (`tolgee push`).
 
-## Copy-paste prompt: install and migrate with an agent
+## Which prompt installs and migrates with an agent?
 
 Paste the following into your coding agent (Claude Code, Cursor chat, Copilot agent mode, Codex, Gemini CLI). Replace
 the placeholders first. The prompt makes the agent classify the project, read the recipes above, sync keys through MCP
@@ -117,10 +122,11 @@ Inputs:
 
 Rules:
 1. Do not rely on your training data for this SDK. Read, in this order, and follow them literally:
-   - https://docs.tolgee.io/android-sdk/agents/index.md
-   - https://docs.tolgee.io/android-sdk/agents/install-views.md (if the app uses Android Views / XML layouts)
-   - https://docs.tolgee.io/android-sdk/agents/install-compose.md (if the app uses Jetpack Compose)
-   - https://docs.tolgee.io/android-sdk/agents/migrate-strings.md
+   - https://docs.tolgee.io/android-sdk/agents.md
+   - https://docs.tolgee.io/android-sdk/content-delivery.md
+   - https://docs.tolgee.io/android-sdk/integrations/android-views/installation.md (if the app uses Android Views / XML layouts)
+   - https://docs.tolgee.io/android-sdk/integrations/jetpack-compose/installation.md (if the app uses Jetpack Compose)
+   - https://docs.tolgee.io/android-sdk/migrate-existing-app.md
    For any class or function you are unsure about, look it up in
    https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt before using it. If the Context7 MCP is available,
    resolve the library "tolgee-mobile-kotlin-sdk" there as a second source.
@@ -142,7 +148,7 @@ Rules:
    nested plurals, namespaced keys).
 ```
 
-## Agent instruction file for apps that use the SDK
+## What goes into the app's AGENTS.md?
 
 Add this to the app repository's `AGENTS.md` (Claude Code also reads it when `CLAUDE.md` contains `@AGENTS.md`;
 Cursor reads `AGENTS.md`; Copilot reads `AGENTS.md` and `.github/copilot-instructions.md`). It keeps future agent work
@@ -154,7 +160,7 @@ on the app consistent with the SDK's rules.
 This app loads translations over the air with the Tolgee Android SDK
 (io.tolgee.mobile-kotlin-sdk:core / :compose). The SDK is pre-1.0; do not trust training data.
 
-- Docs index: https://docs.tolgee.io/llms.txt (Android SDK recipes under /android-sdk/agents/).
+- Docs index: https://docs.tolgee.io/llms.txt (Android SDK guides under /android-sdk/).
 - API reference: https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt
 - Tolgee is initialized once in Application.onCreate() with Tolgee.init { contentDelivery { url = ... } }.
   Never initialize it in an Activity, Fragment or composable.
@@ -171,9 +177,30 @@ This app loads translations over the air with the Tolgee Android SDK
   (Tolgee.instance.setLocale("cs")) must re-render translated text.
 ```
 
-## How the recipes are structured
+## Frequently asked questions
 
-Every recipe follows the same headings so an agent can jump to what it needs: **Outcome**, **Prerequisites**,
-**Detect the project** (shell commands), **Steps** (complete, copy-pasteable code), **Verify** (commands and the
-observable result), **Troubleshooting** (symptom, cause, fix) and **Related**. Human readers get the same pages through
-the sidebar; agents get them through `llms.txt`.
+<FaqSection
+  items={[
+    {
+      question: 'Can Claude Code, Cursor or Copilot integrate Tolgee Android SDK on their own?',
+      answer:
+        'Yes, given the Content Delivery URL and the published languages. The prompt on this page makes the agent read the installation and migration pages, sync keys through MCP or the CLI, do the work and verify it.',
+    },
+    {
+      question: 'Does the agent need a Tolgee API key?',
+      answer:
+        'Only for key sync through the Tolgee MCP server or the Tolgee CLI, and only on the developer machine or in CI. The app itself needs the public Content Delivery URL.',
+    },
+    {
+      question: 'Why should the agent not rely on its training data?',
+      answer:
+        'Tolgee Android SDK is pre-1.0 and its API changes between releases. The Markdown twins of these pages and the generated API reference describe the current release.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Get started](/android-sdk/get-started) for the human view of the same guides.
+- [Content Delivery](/android-sdk/content-delivery): the one platform step the agent cannot do for you.
+- [Diagnostics](/android-sdk/agents/diagnostics) when the integrated app misbehaves.

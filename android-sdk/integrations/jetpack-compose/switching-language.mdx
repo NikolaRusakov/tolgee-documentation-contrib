@@ -1,0 +1,110 @@
+---
+id: switching-language
+title: Switching language in Jetpack Compose
+sidebar_label: Switching language
+description: How to build a locale switcher composable with Tolgee Android SDK, observe the language with changeFlow, and let recomposition do the reload.
+image: /img/og-images/jetpack-compose.png
+keywords: [tolgee, jetpack compose, setLocale, changeFlow, collectAsState, locale switcher, language fallback]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK changes the language of a Jetpack Compose app at runtime with one call, `setLocale`. Every text
+rendered by the `io.tolgee` helpers recomposes on its own, because each helper collects `tFlow` as state. A locale
+switcher composable therefore needs no manual reload: it observes the current language through `changeFlow` and calls
+`setLocale` on click. This page is for anyone adding a language switch to a Compose screen.
+
+## How do I build a locale switcher?
+
+The starter app's switcher observes the current language and disables the button of the active one. Language names
+are deliberately not translated.
+
+```kotlin title="MainActivity.kt"
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import io.tolgee.Tolgee
+import kotlinx.coroutines.flow.map
+
+@Composable
+fun LocaleSwitcher() {
+    val tolgee = Tolgee.instanceOrNull ?: return
+    val locale by tolgee.changeFlow
+        .map { tolgee.getLocale() }
+        .collectAsState(initial = tolgee.getLocale())
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("en" to "English", "cs" to "Čeština", "fr" to "Français").forEach { (tag, label) ->
+            Button(
+                onClick = { tolgee.setLocale(tag) }, // stringResource composables reload on their own
+                enabled = locale.language != tag,
+            ) {
+                Text(label)
+            }
+        }
+    }
+}
+```
+
+`setLocale` accepts a BCP 47 tag, a `java.util.Locale`, or a Compose `androidx.compose.ui.text.intl.Locale`. The
+language is process-wide and not persisted by Tolgee Android SDK; store the tag in your preferences and pass it to
+`Tolgee.init` with `locale(tag)` if the app should remember it.
+
+## How do I observe the current language?
+
+`changeFlow` emits after the manifest loads and after every translation load. Mapping it to `getLocale()` and
+collecting it as state gives a composable that recomposes whenever the language changes, which is useful for a header,
+a flag icon or analytics.
+
+```kotlin
+@Composable
+fun CurrentLanguage() {
+    val tolgee = Tolgee.instance
+    val locale by tolgee.changeFlow.map { tolgee.getLocale() }.collectAsState(initial = tolgee.getLocale())
+    Text(locale.language)
+}
+```
+
+## Which languages can I offer?
+
+The languages published in the Content Delivery, which Tolgee Android SDK knows from `availableLocaleTags` in
+`Tolgee.init` or from the delivery's `manifest.json`. Build the switcher from `Tolgee.instance.availableLocaleTags`
+when the list should follow the platform instead of being hard-coded.
+
+## How does language fallback work?
+
+Tolgee Android SDK resolves a locale progressively: `zh-Hans-CN` falls back to `zh-Hans`, then `zh`, then to
+`defaultLanguage` from `Tolgee.init`. A device set to `en-US` receives the `en` translations. When a key is missing in
+the resolved language, the helper returns the bundled Android resource for the device configuration.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Do I need to call preload after setLocale in Compose?',
+      answer:
+        'No. The io.tolgee helpers collect tFlow, which loads the new language on its own. preload is only needed in Views code that reads strings imperatively.',
+    },
+    {
+      question: 'Does the window title change with the language?',
+      answer:
+        'Not by itself, because it is not a composable. Collect tFlow for R.string.app_name in the Activity and assign it to title, as shown on the Translating page.',
+    },
+    {
+      question: 'Why does a switch show the bundled text?',
+      answer:
+        'The language is not published in the Content Delivery, or it is missing from availableLocaleTags so fallback resolved to defaultLanguage. Publish it and add it to the list.',
+    },
+    {
+      question: 'Does Tolgee Android SDK follow the system language?',
+      answer:
+        'Yes by default. The initial locale is the device locale resolved against the published languages with BCP 47 fallback.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Translating](/android-sdk/integrations/jetpack-compose/translating) for text outside composables.
+- [Content Delivery](/android-sdk/content-delivery): which languages are published and how fallback is configured.
+- [Troubleshooting](/android-sdk/troubleshooting) when a switch shows bundled text.

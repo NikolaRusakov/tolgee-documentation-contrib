@@ -510,6 +510,49 @@ module.exports.redirects = {
       from: '/platform/translation_process/tolgee_translator',
       to: '/platform/translation_process/ai_translator',
     },
+    // Android SDK restructure (JS SDK shape): old flat/duplicated routes -> integrations tree
+    {
+      from: '/android-sdk/installation',
+      to: '/android-sdk/integrations/android-views/installation',
+    },
+    {
+      from: '/android-sdk/usage',
+      to: '/android-sdk/integrations/android-views/translating',
+    },
+    { from: '/android-sdk/modules', to: '/android-sdk/get-started' },
+    {
+      from: '/android-sdk/integrate/AndroidViews',
+      to: '/android-sdk/integrations/android-views/installation',
+    },
+    {
+      from: '/android-sdk/integrate/AndroidJetpackCompose',
+      to: '/android-sdk/integrations/jetpack-compose/installation',
+    },
+    {
+      from: '/android-sdk/jetpack/installation',
+      to: '/android-sdk/integrations/jetpack-compose/installation',
+    },
+    {
+      from: '/android-sdk/jetpack/usage',
+      to: '/android-sdk/integrations/jetpack-compose/translating',
+    },
+    {
+      from: '/android-sdk/jetpack/troubleshooting',
+      to: '/android-sdk/troubleshooting',
+    },
+    {
+      from: '/android-sdk/agents/install-views',
+      to: '/android-sdk/integrations/android-views/installation',
+    },
+    {
+      from: '/android-sdk/agents/install-compose',
+      to: '/android-sdk/integrations/jetpack-compose/installation',
+    },
+    {
+      from: '/android-sdk/agents/migrate-strings',
+      to: '/android-sdk/migrate-existing-app',
+    },
+    { from: '/android-sdk/agents/api-reference', to: '/android-sdk/api' },
     ...BLOG_REDIRECTS,
   ],
   createRedirects(existingPath) {

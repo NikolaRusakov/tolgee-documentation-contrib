@@ -55,6 +55,20 @@ const IMAGE_CONFIGS: OgImageConfig[] = [
     category: 'ANDROID',
   },
   {
+    filename: 'android-views',
+    title: 'Android Views',
+    subtitle: 'Tolgee Android SDK for Activities and XML layouts',
+    gradient: true,
+    category: 'ANDROID',
+  },
+  {
+    filename: 'jetpack-compose',
+    title: 'Jetpack Compose',
+    subtitle: 'Tolgee Android SDK for Compose and Compose Multiplatform',
+    gradient: true,
+    category: 'ANDROID',
+  },
+  {
     filename: 'ios-sdk',
     title: 'iOS SDK',
     subtitle: 'Native iOS Localization',

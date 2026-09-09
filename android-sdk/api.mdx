@@ -1,17 +1,28 @@
 ---
-id: api-reference
-title: API quick reference
-sidebar_label: API quick reference
-description: Compact table of the public Tolgee Android SDK API (core and compose modules, version 1.0.0-alpha04) with the URL scheme of the generated Markdown reference for deeper investigation.
+id: api
+title: Tolgee Android SDK API reference
+sidebar_label: API
+description: Map of the public Tolgee Android SDK API, core and compose modules, with links into the generated KDoc reference and its Markdown twin.
 image: /img/og-images/android-sdk.png
 llm_prompt: "Read {url} so you can answer questions about the Tolgee Android SDK API and look up any class or member in the linked Markdown reference."
 keywords: [tolgee, android, api reference, dokka, kdoc, markdown, llms.txt, ai agent]
 ---
 
-This page is a map, not the full reference. It lists what exists and where to read the KDoc; signatures are
-abbreviated. Source of truth: the generated reference and the binary API dumps of the release you use.
+import FaqSection from '@site/src/component/docs/FaqSection';
 
-## Where the full reference lives
+Tolgee Android SDK publishes its full API reference, generated from KDoc, on GitHub Pages, with a Markdown twin of every
+page for coding agents. This page is the map for developers and agents who need to find a class or member quickly: it
+lists what exists in the `core` and `compose` modules with abbreviated signatures and links into the generated
+reference. The source of truth is that reference and the binary API dumps of the release you use.
+
+## How do I read this page?
+
+Each table below lists the members of one type with an abbreviated signature and one line on what it does. Use it to
+find the name; then open the type's Markdown page in the generated reference for the full signature, the KDoc and the
+platforms the member exists on. Members marked common exist in the Kotlin Multiplatform core; members marked Android
+exist only in the Android source set, which is what `Tolgee.instance` is on Android.
+
+## Where does the full reference live?
 
 | Resource | URL |
 |---|---|
@@ -35,7 +46,10 @@ Examples: [`Tolgee`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/
 [compose helpers](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/compose/-compose/io.tolgee/index.md).
 If a link 404s, resolve the page through `llms.txt` instead of guessing.
 
-## Module `core` (`io.tolgee.mobile-kotlin-sdk:core`)
+## What is in the core module?
+
+The `core` artifact (`io.tolgee.mobile-kotlin-sdk:core`) holds the multiplatform `Tolgee` class, its configuration
+builders, the Android overloads that take resource ids, the context wrapper and the storage provider.
 
 ### `io.tolgee.Tolgee` (common)
 
@@ -117,7 +131,9 @@ The wrapper's `Resources` overrides `getString`, `getText`, `getQuantityString`,
 | `TolgeeStorageProvider` | Interface `get(name): ByteArray?` / `put(name, data)` for persistent caching. |
 | `TolgeeStorageProviderAndroid(context, versionCode, path = "tolgee/localization-cache")` | File cache under `filesDir`, keyed by version code. |
 
-## Module `compose` (`io.tolgee.mobile-kotlin-sdk:compose`)
+## What is in the compose module?
+
+The `compose` artifact (`io.tolgee.mobile-kotlin-sdk:compose`) depends on `core` and adds the three composable helpers.
 
 All in package `io.tolgee`; every function has an overload with an explicit `tolgee: Tolgee` first parameter.
 
@@ -131,12 +147,40 @@ All in package `io.tolgee`; every function has an overload with an explicit `tol
 Behaviour: collect `tFlow` as state with the bundled resource as initial value; without an initialized `Tolgee`
 they delegate to the platform composable.
 
-## Module `gradle-plugin`
+## What about the gradle-plugin module?
 
 Published as `io.tolgee.mobile-kotlin-sdk:gradle-plugin`, but the compiler plugin it configures is disabled in the
 current release; do not add it to consumer builds.
 
-## Related
+## Frequently asked questions
 
-- [Diagnostics](./diagnostics.mdx) for how to use the reference when investigating behaviour.
-- [Usage (Views)](../usage.mdx), [Usage (Compose)](../jetpack/usage.mdx) for narrative examples.
+<FaqSection
+  items={[
+    {
+      question: 'Where is the complete Tolgee Android SDK API reference?',
+      answer:
+        'At tolgee.github.io/tolgee-mobile-kotlin-sdk, generated from KDoc on every release, with a Markdown twin of every page and an llms.txt index for coding agents.',
+    },
+    {
+      question: 'How do I check whether a member exists in my SDK version?',
+      answer:
+        'Open the binary API dump for the module, core.api or compose.api, at the release tag in the repository. A signature that is absent there does not exist in that release.',
+    },
+    {
+      question: 'What is the difference between Tolgee.instance and TolgeeAndroid?',
+      answer:
+        'Tolgee.instance is the singleton created by Tolgee.init. On Android it is a TolgeeAndroid, which adds the overloads that take resource ids, preload with a lifecycle owner, and retranslate.',
+    },
+    {
+      question: 'Which formatter do I need for named parameters?',
+      answer:
+        'Tolgee.Formatter.ICU. The default Sprintf formatter accepts positional arguments only, and TolgeeMessageParams.Mapped throws with it.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Diagnostics](/android-sdk/agents/diagnostics) for how to use the reference when investigating behaviour.
+- [Translating in Android Views](/android-sdk/integrations/android-views/translating) and
+  [Translating in Jetpack Compose](/android-sdk/integrations/jetpack-compose/translating) for narrative examples.

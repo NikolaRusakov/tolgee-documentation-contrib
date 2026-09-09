@@ -1,0 +1,204 @@
+---
+id: content-delivery
+title: Content Delivery for Tolgee Android SDK
+sidebar_label: Content Delivery
+description: How to create the Tolgee Content Delivery in the Android SDK format, verify it with curl, push strings.xml keys and configure the URL per environment.
+image: /img/og-images/android-sdk.png
+keywords: [tolgee, content delivery, cdn, android sdk format, json, strings.xml, tolgee cli, availableLocaleTags, cache]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Content Delivery is the CDN endpoint from which Tolgee Android SDK loads translations at runtime. You create it
+once per project in the Tolgee Platform, in the **Android SDK** format, and paste its public URL prefix into
+`Tolgee.init`. This page is for anyone setting up or debugging that endpoint: the format choice, the one-command check,
+getting your keys into Tolgee, one URL per environment, and what the SDK caches.
+
+## Which Content Delivery format does Tolgee Android SDK need?
+
+Tolgee Android SDK parses **JSON only**. There are two ways Android strings can leave the Tolgee Platform, and only
+one of them is for the SDK:
+
+- **Content Delivery in the "Android SDK" format** publishes `<prefix>/<languageTag>.json` per language, with
+  Android placeholders (`%1$s`, `%d`), plurals as objects keyed by CLDR category and arrays as JSON arrays. This is
+  what the app reads. The SDK defaults `path = { "$it.json" }` and `Tolgee.Formatter.Sprintf` match it exactly.
+- **`strings.xml` export or Tolgee CLI pull** produces Android resource files for the repository. This is how keys and
+  fallbacks get into the app at build time. The SDK never downloads XML.
+
+If you create the delivery in another format, or point `path` at `values-$it/strings.xml`, the SDK receives something it
+cannot parse and silently falls back to the bundled resources. Nothing crashes, and the app looks like Tolgee is not
+installed. Fix the format in the Tolgee Platform; there is no setting in the app that works around it.
+
+## How do I create the Content Delivery?
+
+1. Open the Tolgee Platform, your project, then **Developer settings → Content Delivery**.
+2. Click **Add**, choose the format **Android SDK**, keep auto-publish on, and select the languages to publish.
+3. Save and copy the URL prefix. It looks like `https://cdn.tolg.ee/your-cdn-url-prefix`.
+
+The prefix only allows reading published translations, so it can live in the app. The [Content Delivery platform
+docs](/platform/projects_and_organizations/content_delivery) describe custom storages and self-hosted CDNs.
+
+## How do I verify the Content Delivery?
+
+One command from your machine, before any app code. Replace the prefix with yours:
+
+```bash
+curl -sSf "https://cdn.tolg.ee/your-cdn-url-prefix/en.json" | head -c 300
+```
+
+You should see a JSON object such as `{"welcome_message":"Welcome","items_count":{"one":"…","other":"…"}}`.
+
+| You see | It means | Fix |
+|---|---|---|
+| A JSON object | The delivery is correct | Continue |
+| HTTP 404 or 403 | Wrong prefix, or the delivery was never published | Copy the prefix again; click **Publish** |
+| XML | The delivery has the wrong format | Recreate it with format **Android SDK** |
+| An empty object `{}` | No keys in the project, or the language is not published | Push the strings (next section); add the language |
+
+## How do I get my keys into Tolgee?
+
+Tolgee Android SDK looks a string up by its resource entry name: `R.string.welcome_message` is the key
+`welcome_message`. The simplest way to keep the names identical is to push `strings.xml` with the
+[Tolgee CLI](/tolgee-cli/installation). Put this file in the app module and run `tolgee login <project API key>` once,
+then `tolgee push`:
+
+```json title=".tolgeerc"
+{
+  "$schema": "https://docs.tolgee.io/cli-schema.json",
+  "projectId": 12345,
+  "format": "ANDROID_XML",
+  "push": {
+    "filesTemplate": "./src/main/res/values-{languageTag}/strings.xml",
+    "language": ["en", "cs", "fr"]
+  },
+  "pull": {
+    "path": ".",
+    "fileStructureTemplate": "./src/main/res/values-{languageTag}/strings.{extension}"
+  }
+}
+```
+
+The API key stays on your machine or in CI; it never enters the app. From then on the loop is: add the string to
+`strings.xml`, `tolgee push`, translate in the Tolgee Platform, and the delivery publishes it over the air. The
+[Android XML format](/platform/formats/android_xml) page lists how plurals, arrays and `translatable="false"` map.
+Compose Multiplatform resources use `format: "COMPOSE_XML"` instead.
+
+## How do I use a different URL per environment?
+
+Treat the Content Delivery URL as an environment concern, not a code concern. The starter apps resolve it from
+`local.properties`, then Gradle properties, then the environment, and expose it through `BuildConfig`, so the
+Application class contains no URL at all.
+
+```kotlin title="app/build.gradle.kts"
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun contentDeliveryUrl(key: String): String =
+    localProperties.getProperty(key)
+        ?: providers.gradleProperty(key).orNull
+        ?: providers.environmentVariable(key).orNull
+        ?: error("Set $key to your Tolgee Content Delivery URL prefix")
+
+android {
+    buildFeatures { buildConfig = true }
+    buildTypes {
+        debug { buildConfigField("String", "TOLGEE_CDN_URL", "\"${contentDeliveryUrl("TOLGEE_CDN_DEV")}\"") }
+        release { buildConfigField("String", "TOLGEE_CDN_URL", "\"${contentDeliveryUrl("TOLGEE_CDN_PROD")}\"") }
+    }
+}
+```
+
+```kotlin title="MyApplication.kt"
+Tolgee.init {
+    contentDelivery {
+        url = BuildConfig.TOLGEE_CDN_URL
+        storage = TolgeeStorageProviderAndroid(this@MyApplication, BuildConfig.VERSION_CODE)
+    }
+}
+```
+
+Create one Content Delivery per environment in the Tolgee Platform and set `TOLGEE_CDN_DEV=…` and
+`TOLGEE_CDN_PROD=…` in `local.properties` or in CI.
+
+## What do path, availableLocaleTags and storage do?
+
+Three settings in `contentDelivery { }` decide what is fetched and kept. Leave `path` alone unless you host the JSON
+files yourself under a different layout; they must still be JSON in the "Android SDK" shape.
+
+```kotlin
+Tolgee.init {
+    contentDelivery {
+        url = "https://cdn.example.com/i18n"
+        path = { "android/$it.json" }           // default: "$it.json"
+        storage = TolgeeStorageProviderAndroid(this@MyApplication, BuildConfig.VERSION_CODE)
+        availableLocaleTags("en", "cs", "fr")   // languages published in the delivery
+        formatter = Tolgee.Formatter.Sprintf    // default; ICU only for {name} style placeholders
+    }
+    defaultLanguage("en")
+}
+```
+
+- **`path`** maps a language tag to the file under the URL prefix.
+- **`availableLocaleTags`** lists the published languages. The Tolgee Content Delivery does not serve a
+  `manifest.json` by default, so this list is what enables BCP 47 fallback (`en-US` → `en`) and `preloadAll()`.
+- **`storage`** is the persistent cache. `TolgeeStorageProviderAndroid` writes under `filesDir`, keyed by the version
+  code, so a new app version starts clean. Without it, the app re-downloads on every cold start.
+- **`formatter`** is `Sprintf` for Android placeholders. Switch to `ICU` only when the delivery exports ICU messages;
+  named parameters then work, positional ones still do.
+
+## How does caching work?
+
+Each fetch of `<languageTag>.json` overwrites the cached copy for that language. When the fetch fails, the cache is
+served. When both are missing, every API returns the bundled Android resource. The CDN edge caches a published file
+for up to about fifteen minutes, so a change in the platform can take that long to reach a device that fetches
+constantly; a fresh app start after publishing usually shows it immediately. At most one language is held in memory
+by default (`maxLocalesInMemory = 1`); raise it for apps that switch languages often.
+
+## Can I self-host the Content Delivery?
+
+Yes. A self-hosted Tolgee publishes to the storage you configure. Point `url` at that host, add the host to
+`res/xml/network_security.xml`, and keep the "Android SDK" format. The [self-hosting docs](/platform/self_hosting/getting_started)
+cover the server side.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Why does my app show only bundled strings although the Content Delivery exists?',
+      answer:
+        'Most often the delivery is not in the Android SDK format, or path points at strings.xml. Run the curl check: the response must be a JSON object. XML or 404 means the delivery, not the app, needs fixing.',
+    },
+    {
+      question: 'Is the Content Delivery URL secret?',
+      answer:
+        'No. It only allows reading published translations. Tolgee API keys are used by the CLI and never enter the app.',
+    },
+    {
+      question: 'Do I still need strings.xml?',
+      answer:
+        'Yes. It provides the key names, the offline fallback, and the text shown before the first CDN response. Push it with the Tolgee CLI so both sides share the same keys.',
+    },
+    {
+      question: 'How fast does a change reach users?',
+      answer:
+        'The delivery publishes within seconds when auto-publish is on. The CDN edge caches for up to fifteen minutes, and the app fetches on preload or on the first composable that reads a string.',
+    },
+    {
+      question: 'Can I use namespaces?',
+      answer:
+        'No. Tolgee Android SDK reads one namespace-less delivery. Publish all keys of the app in a single Content Delivery.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Install Tolgee Android SDK in an Android Views app](/android-sdk/integrations/android-views/installation) or
+  [in a Jetpack Compose app](/android-sdk/integrations/jetpack-compose/installation).
+- [Tolgee CLI push and pull](/tolgee-cli/push-pull-strings) for the key sync loop.
+- [Production guide](/android-sdk/production) for environments and cache invalidation.

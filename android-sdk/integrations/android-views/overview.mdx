@@ -1,0 +1,39 @@
+---
+id: overview
+title: Tolgee with Android Views
+sidebar_label: Overview
+slug: /integrations/android-views
+description: How Tolgee Android SDK integrates with Activities, Fragments, XML layouts and ViewModels through the core artifact and a context wrapper.
+image: /img/og-images/android-views.png
+keywords: [tolgee, android views, getString, TolgeeContextWrapper, tFlow, viewmodel, over the air translations]
+---
+
+import StarterBanner from '@site/android-sdk/shared/StarterBanner';
+
+Tolgee Android SDK supports classic Android apps built with Activities, Fragments, XML layouts and ViewModels through
+the `io.tolgee.mobile-kotlin-sdk:core` artifact. You initialize Tolgee once in the Application class and wrap the
+context of each Activity. From then on `getString`, `getQuantityString`, `getStringArray` and layout attributes such
+as `android:text` resolve through Tolgee, with the bundled resource as fallback, and a `Flow` API keeps text that is
+set from code up to date.
+
+<StarterBanner starter="android-views" label="Android Views" />
+
+## What does the core artifact give a Views app?
+
+- **`TolgeeContextWrapper`**: wraps an Activity context so every resource lookup and every inflated layout is
+  translated, without touching call sites.
+- **`tFlow`, `tPluralFlow`, `tArrayFlow`**: `Flow<String>` variants for text you set from code with arguments, so a
+  language switch or a published translation updates the view in place.
+- **`changeFlow` and `retranslate`**: one signal when translations change, and one call that re-applies them to a
+  whole Activity without `recreate()`.
+- **`preload`**: fetches the current language when a screen starts, cache first, then CDN.
+
+## Where do I go next?
+
+1. [Installation](/android-sdk/integrations/android-views/installation): dependency, network config,
+   `Tolgee.init`, the context wrapper, first translated string.
+2. [Translating](/android-sdk/integrations/android-views/translating): parameters, plurals, arrays, text set from
+   code, strings outside an Activity, ViewModels.
+3. [Switching language](/android-sdk/integrations/android-views/switching-language): `setLocale`, reacting to the
+   change, fallback rules.
+4. [Migrate an existing app](/android-sdk/migrate-existing-app) when the app already has hundreds of lookups.

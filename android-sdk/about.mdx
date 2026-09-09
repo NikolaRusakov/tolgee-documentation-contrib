@@ -1,66 +1,127 @@
 ---
 id: about
-title: Overview
+title: Tolgee Android SDK
+sidebar_label: Overview
 slug: /
-description: Overview of Tolgee Android SDK with Over‑the‑Air (OTA) localization updates and how to get started.
+description: Tolgee Android SDK adds over the air translation updates to Android Views and Jetpack Compose apps while strings.xml stays the offline fallback.
 image: /img/og-images/android-sdk.png
+keywords: [tolgee, android sdk, android localization, over the air translations, strings.xml, jetpack compose, content delivery]
 ---
 
-> NOTE:
-> For managing static translations in your repository, consider using the [Tolgee CLI](/tolgee-cli/installation).
+import FaqSection from '@site/src/component/docs/FaqSection';
 
-Tolgee Android SDK lets you localize Android apps with dynamic content delivery, Over‑the‑Air (OTA) translation updates, reactive locale changes, and seamless integration with Views and Jetpack Compose.
+Tolgee Android SDK is a Kotlin library that adds over the air translation updates to Android apps built with Views or
+Jetpack Compose. You keep your `strings.xml`, push the keys to the Tolgee Platform, and initialize Tolgee Android SDK
+with a Content Delivery URL. The app then loads translations from the Tolgee CDN at runtime, switches language without
+a restart, and falls back to the bundled Android resources when it is offline.
 
-## Why use it
+## What does Tolgee Android SDK do?
 
-- __Avoid releases for copy changes__: Ship translation fixes and new languages without a new app build.
-- __Faster iteration__: Product/localization teams can push improvements instantly and validate in production.
-- __Consistent UX__: UI updates reactively on locale change; fewer stale or mismatched strings.
-- __Resilient by default__: Works offline with caching and resource fallbacks; fewer blank strings.
+Tolgee Android SDK replaces the moment a translation is decided. Without it, the text of `R.string.welcome_message`
+is fixed when the APK is built. With it, the same resource id is looked up by its name (`welcome_message`) in a JSON
+file that the Tolgee CDN serves for the current language. A translator fixes a typo in the Tolgee Platform, the
+Content Delivery publishes, and every installed app shows the correction on its next start. No release, no store
+review.
 
-## What you can do
+- **Over the air updates.** Translations come from the Tolgee Content Delivery, a CDN with one JSON file per language.
+- **Same resource ids.** `getString(R.string.key)`, layout attributes and Compose `stringResource(R.string.key)` keep
+  working; the key name is the resource entry name.
+- **Offline by default.** The last downloaded translations are cached on the device. If the cache is empty, the SDK
+  returns the bundled string. The app never shows a blank.
+- **Language switch at runtime.** `setLocale("cs")` changes the language for the whole app without recreating
+  Activities. Views and composables that read through Tolgee update on their own.
+- **Two UI toolkits, one SDK.** The `core` artifact serves Android Views, the `compose` artifact adds Jetpack Compose
+  helpers and includes `core`.
 
-- __Over‑the‑Air (OTA) updates__: Deliver translations via CDN (Cloud or self‑host) with caching.
-- __Views and Compose support__: `stringResource`/`pluralStringResource`, parameters, and reactive updates.
-- __Runtime locale API__: Switch locales and react to `Tolgee.changeFlow`.
-- __Fallbacks and preloading__: Android resources fallback; preload critical namespaces/locales.
-- __Hosting options__: Tolgee Cloud CDN or your own CDN.
+## How does a translation get from Tolgee to the screen?
 
-## Demo apps
+The flow has four stops, and each has its own page in these docs.
 
-- __Android Views demo__: https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/exampleandroid
-- __Jetpack Compose demo__: https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/examplejetpack
+1. **Your `strings.xml` is the source of keys.** You push it to the Tolgee Platform with the Tolgee CLI
+   (`format: "ANDROID_XML"`). Translators and machine translation work on the platform.
+2. **A Content Delivery publishes the translations.** Create it in the Tolgee Platform with format **Android SDK**. It
+   produces `https://cdn.tolg.ee/your-cdn-url-prefix/<language>.json` for every published language. The
+   [Content Delivery guide](/android-sdk/content-delivery) covers this step, including the one format mistake that
+   silently disables everything.
+3. **The app initializes Tolgee Android SDK once**, in `Application.onCreate()`, with that URL and a persistent cache.
+4. **UI code reads strings as before.** In Views, a context wrapper routes `getString` and layout inflation through
+   Tolgee. In Compose, three imports from `io.tolgee` replace the `androidx.compose.ui.res` helpers.
 
-## Real world examples
-- Android Jetpack Compose: __Kitshn__ App: https://github.com/NikolaRusakov/kitshn
-- Android Views: __BinaryEye__ App: https://github.com/NikolaRusakov/BinaryEye
+## Which artifact do I need?
 
-## Compatibility
+| Your UI | Artifact | Start here |
+|---|---|---|
+| Activities, Fragments, XML layouts, ViewModel | `io.tolgee.mobile-kotlin-sdk:core` | [Tolgee with Android Views](/android-sdk/integrations/android-views) |
+| Jetpack Compose or Compose Multiplatform | `io.tolgee.mobile-kotlin-sdk:compose` (includes `core`) | [Tolgee with Jetpack Compose](/android-sdk/integrations/jetpack-compose) |
+| Both in one app | `compose` | Follow both guides; the Application setup is shared |
 
-> NOTE:
-> Build configuration examples use Kotlin DSL (`build.gradle.kts`). Groovy DSL may work but is not officially supported/tested.
-- Groovy Catalogue support, example https://github.com/NikolaRusakov/BinaryEye/blob/master/app/build.gradle
-- Groovy and Kotlin DSL support
-## Get started
+The Gradle plugin published under the same group configures a compiler plugin that is not released yet. Do not add
+it to an app.
 
-- __Installation__: Set up dependencies and network security — [Installation](./installation.mdx)
-- __Modules overview__: Choose between Core and Compose — [Modules overview](./modules.mdx)
-- __Jetpack Compose__: Install, use, and troubleshoot — [Installation](/android-sdk/jetpack/installation), [Usage](/android-sdk/jetpack/usage), [Troubleshooting](/android-sdk/jetpack/troubleshooting)
-- __Usage with Views (non‑Compose)__: Simple keys, parameters, plurals, preloading, reactive flows — [Usage](./usage.mdx)
-- __Production guide__: Over‑the‑Air (OTA) updates, caching, formatting, testing — [Production guide](./production.mdx)
-- __Troubleshooting__: Common issues and diagnostics — [Troubleshooting](./troubleshooting.mdx)
+## What are the requirements?
 
-## Using an AI coding agent?
+- Android API level 21 or newer.
+- Kotlin. The examples use the Gradle Kotlin DSL; the Groovy DSL works with the same coordinates.
+- A Tolgee account, on [Tolgee Cloud](https://app.tolgee.io) or a self-hosted instance. Tolgee Android SDK only needs
+  the public Content Delivery URL at runtime; API keys stay with the Tolgee CLI.
+- Resolve the current SDK version on
+  [Maven Central](https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk). The SDK is pre-1.0 and
+  the API can change between releases.
 
-The [guides for AI agents](./agents/index.mdx) are task-shaped recipes (install, migrate resource strings, diagnose)
-with a copy-paste prompt that lets Claude Code, Cursor, Copilot or Codex integrate the SDK for you. Machine-readable
-entry points: [`docs.tolgee.io/llms.txt`](https://docs.tolgee.io/llms.txt) for these docs (append `.md` to any page
-URL for its Markdown twin) and
-[`tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt)
-for the API reference generated from KDoc.
+## Where can I see a working app?
+
+Two starter apps in the SDK repository show the complete integration in about ten files each and are built on every
+commit. Every code block in these docs is a file from one of them.
+
+- [Android Views starter](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters/android-views):
+  Activity, ViewModel, XML layouts, a locale switch, plurals and arrays.
+- [Jetpack Compose starter](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters/jetpack-compose):
+  the same screen in Compose with Material 3.
+
+Larger demo apps, including Compose Multiplatform, live in the
+[demo folder](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo) of the same repository.
+
+## Can an AI coding agent do the integration?
+
+Yes. Every page in this section has a **Copy page** menu that hands its Markdown to ChatGPT, Claude, Perplexity or
+Cursor, and the installation and migration pages carry a task prompt for Claude Code, Copilot, Codex and Gemini CLI.
+The [guide for AI agents](/android-sdk/agents) lists the machine-readable entry points: `docs.tolgee.io/llms.txt` for
+these docs and the generated [API reference](/android-sdk/api) for the SDK itself.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Does Tolgee Android SDK replace strings.xml?',
+      answer:
+        'No. strings.xml stays in the app as the source of key names and as the offline fallback. Tolgee Android SDK adds translations delivered over the air on top of it.',
+    },
+    {
+      question: 'Do I need a new app release to change a translation?',
+      answer:
+        'No. Change the text in the Tolgee Platform and publish the Content Delivery. Every installed app loads the new text on its next start, or immediately when it calls preload.',
+    },
+    {
+      question: 'What happens when the device is offline?',
+      answer:
+        'The SDK serves the last translations it cached on the device. On a fresh install with no cache it returns the bundled Android string, so the UI is never empty.',
+    },
+    {
+      question: 'Can I use Tolgee Android SDK with both Views and Jetpack Compose in one app?',
+      answer:
+        'Yes. Add the compose artifact, which includes core, initialize Tolgee once in the Application class, wrap Activity contexts for the Views screens and switch the stringResource imports in the Compose screens.',
+    },
+    {
+      question: 'Is the Content Delivery URL a secret?',
+      answer:
+        'No. The URL prefix only allows reading published translations, so it can live in the app. Tolgee API keys are used by the Tolgee CLI on your machine or in CI and never enter the APK.',
+    },
+  ]}
+/>
 
 ## Next steps
 
-- Install and configure the SDK: [Installation](./installation.mdx)
-- Connect your app to the Tolgee Platform and manage translations collaboratively: [Platform docs](../platform/)
-- Generate or manage static strings with CLI: [Tolgee CLI](/tolgee-cli/installation)
+- Pick your guide on [Get started](/android-sdk/get-started).
+- Create the CDN endpoint the SDK reads from: [Content Delivery](/android-sdk/content-delivery).
+- Push your existing strings to Tolgee with the [Tolgee CLI](/tolgee-cli/installation).

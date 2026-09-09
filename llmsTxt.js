@@ -3,7 +3,7 @@
 // On every `docusaurus build` this plugin writes, next to the HTML pages:
 //   - /llms.txt        an index of every documentation page with a one-line description
 //   - /llms-full.txt   the same index followed by the full Markdown of every page
-//   - /<route>.md      a clean Markdown twin of each page (e.g. /android-sdk/installation.md)
+//   - /<route>.md      a clean Markdown twin of each page (e.g. /android-sdk/content-delivery.md)
 // Format: https://llmstxt.org
 //
 // The Android SDK API reference (KDoc rendered by Dokka) lives in the SDK repository and
@@ -20,10 +20,13 @@ const llmsTxt = [
       'Tolgee is an open-source localization platform. These docs cover the Tolgee Platform (translation management, content delivery CDN, REST API), the Tolgee CLI, and the JavaScript, Android and iOS SDKs. Every link below points to a Markdown version of a documentation page.',
     // Default categorisation depth (route rules below override it per section).
     depth: 2,
-    // Section order in llms.txt. Task-oriented SDK guides go first so a coding agent
-    // reading only the top of the file lands on install / migrate instructions.
+    // Section order in llms.txt. The Android SDK entry ramp goes first so a coding agent
+    // reading only the top of the file lands on the Content Delivery and install guides.
     includeOrder: [
-      '/android-sdk/agents/**',
+      '/android-sdk/get-started',
+      '/android-sdk/content-delivery',
+      '/android-sdk/integrations/**',
+      '/android-sdk/migrate-existing-app',
       '/android-sdk/**',
       '/platform/getting_started/**',
       '/platform/projects_and_organizations/content_delivery',
@@ -55,20 +58,21 @@ const llmsTxt = [
       ],
       // First matching rule wins, so specific routes come before their parents.
       routeRules: [
+        // One rule per sidebar category, so llms.txt sections equal the human sidebar.
         {
-          route: '/android-sdk/agents/**',
+          route: '/android-sdk/integrations/android-views/**',
           depth: 2,
-          categoryName: 'Android SDK: guides for AI agents',
+          categoryName: 'Android SDK: Android Views',
         },
         {
-          route: '/android-sdk/jetpack/**',
+          route: '/android-sdk/integrations/jetpack-compose/**',
           depth: 2,
           categoryName: 'Android SDK: Jetpack Compose',
         },
         {
-          route: '/android-sdk/integrate/**',
+          route: '/android-sdk/agents/**',
           depth: 2,
-          categoryName: 'Android SDK: starters',
+          categoryName: 'Android SDK: guides for AI agents',
         },
         // Top-level SDK pages stay in one flat list instead of one subcategory per page.
         { route: '/android-sdk/**', depth: 1, categoryName: 'Android SDK' },

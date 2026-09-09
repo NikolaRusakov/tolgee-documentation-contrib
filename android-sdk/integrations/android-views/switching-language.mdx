@@ -1,0 +1,117 @@
+---
+id: switching-language
+title: Switching language in Android Views
+sidebar_label: Switching language
+description: How to switch the language of an Android Views app at runtime with Tolgee Android SDK, react with changeFlow, and how BCP 47 fallback works.
+image: /img/og-images/android-views.png
+keywords: [tolgee, android views, setLocale, changeFlow, locale switch, language fallback, over the air translations]
+---
+
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK changes the language of an Android Views app at runtime with one call, `setLocale`, followed by a
+`preload` that fetches the new translations. Activities do not need to be recreated: `changeFlow` emits when the data
+arrives, `retranslate` re-applies inflated layouts, and views bound with `tFlow` update on their own. This page is for
+anyone adding a language switch to a Views screen.
+
+## How do I switch the language?
+
+`setLocale` accepts a BCP 47 tag or a `java.util.Locale`. It only updates the locale; `preload` loads the translations
+for it, cache first, then CDN. Put both in the base Activity so every screen has the same switch.
+
+```kotlin title="BaseActivity.kt"
+protected fun switchLocale(tag: String) {
+    val tolgee = Tolgee.instanceOrNull ?: return
+    tolgee.setLocale(tag)
+    tolgee.preload(this)
+}
+```
+
+```kotlin title="MainActivity.kt"
+binding.buttonCs.setOnClickListener { switchLocale("cs") }
+binding.buttonEn.setOnClickListener { switchLocale("en") }
+```
+
+The language is process-wide and not persisted by Tolgee Android SDK. If the app should remember it, store the tag
+in your preferences and pass it to `Tolgee.init` with `locale("cs")` on the next start.
+
+## How do I react to the change?
+
+Every Activity that extends the base class from [Installation](/android-sdk/integrations/android-views/installation)
+already collects `changeFlow` and calls `retranslate`, so layouts update in place. Text set from code updates through
+`bindTolgee` or the `onTranslationsChanged` hook. For code that cannot use coroutines, `ChangeListener` is the callback
+form; it runs on the main thread.
+
+```kotlin
+class MainActivity : BaseActivity() {
+
+    override fun onTranslationsChanged() {
+        supportActionBar?.title = getString(R.string.app_name) // anything set by hand
+    }
+}
+```
+
+```kotlin
+class LegacyActivity : Activity(), Tolgee.ChangeListener {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Tolgee.instance.addChangeListener(this)
+    }
+    override fun onDestroy() {
+        Tolgee.instance.removeChangeListener(this)
+        super.onDestroy()
+    }
+    override fun onTranslationsChanged() = recreate()
+}
+```
+
+## Which languages can I switch to?
+
+The languages published in the Content Delivery. Tolgee Android SDK learns them from `availableLocaleTags` in
+`Tolgee.init`, or from the `manifest.json` file if the delivery serves one. `availableLocales` on the instance returns
+the list after the first `preload`, and `null` before it.
+
+```kotlin
+val tags = Tolgee.instance.availableLocaleTags // for example [en, cs, fr, sv]
+val current = Tolgee.instance.getLocale()
+```
+
+## How does language fallback work?
+
+Tolgee Android SDK resolves a requested locale progressively: `zh-Hans-CN` falls back to `zh-Hans`, then to `zh`, and
+finally to `defaultLanguage` from `Tolgee.init`. A device set to `en-US` therefore receives the `en` translations
+without any configuration. When a key is missing in the resolved language, the bundled Android resource for the
+device configuration is returned, which is why keeping `values-xx/strings.xml` in the app still matters.
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Does setLocale change the language of the whole app?',
+      answer:
+        'Yes. The locale is process-wide. Every Activity that collects changeFlow or uses tFlow updates; Activities created later use the new language from the start.',
+    },
+    {
+      question: 'Do I have to call recreate after switching the language?',
+      answer:
+        'No. retranslate re-applies inflated layouts in place and tFlow-bound views update on their own. recreate is only a fallback for screens that build all text by hand.',
+    },
+    {
+      question: 'Why does nothing happen after setLocale?',
+      answer:
+        'setLocale only updates the locale. Call preload on the Activity afterwards so the new translations are fetched, and make sure the language is published in the Content Delivery and listed in availableLocaleTags.',
+    },
+    {
+      question: 'Does Tolgee Android SDK follow the system language?',
+      answer:
+        'Yes by default. The initial locale is the device locale, resolved with BCP 47 fallback against the published languages, and defaultLanguage is used when nothing matches.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Translating](/android-sdk/integrations/android-views/translating): the helpers that keep code-set text current.
+- [Content Delivery](/android-sdk/content-delivery): which languages are published and how fallback is configured.
+- [Troubleshooting](/android-sdk/troubleshooting) when a switch shows bundled text.

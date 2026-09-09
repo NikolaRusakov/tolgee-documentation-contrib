@@ -1,0 +1,252 @@
+---
+id: translating
+title: Translating in Android Views
+sidebar_label: Translating
+description: How to translate static, parameterized, plural and array strings in Android Views with Tolgee Android SDK, in Activities, outside them and in ViewModels.
+image: /img/og-images/android-views.png
+keywords: [tolgee, android views, getString, plurals, string array, tFlow, TextView, viewmodel, over the air translations]
+---
+
+import StarterBanner from '@site/android-sdk/shared/StarterBanner';
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK translates strings in Android Views apps through the wrapped Activity context and through a small
+set of `Flow` APIs. Static text in layouts and plain `getString` calls need no change once the context is wrapped.
+Text you set from code with arguments, text outside an Activity, and text a ViewModel owns each use one helper from
+this page. The result is a screen where every string follows the language and the latest published translation.
+
+<StarterBanner starter="android-views" label="Android Views" />
+
+## How do I read a static translation in an Activity?
+
+Nothing changes. With the context wrapped as described in
+[Installation](/android-sdk/integrations/android-views/installation), layout attributes are translated during
+inflation and `getString` returns the Tolgee text.
+
+```xml title="res/layout/activity_main.xml"
+<TextView
+    android:id="@+id/text_static"
+    android:text="@string/description" />
+```
+
+```kotlin
+val text = getString(R.string.description) // resolved through Tolgee, falls back to the bundled string
+```
+
+Tolgee Android SDK looks the key up by the resource entry name: `R.string.description` becomes the key `description`.
+Keep the names in the Tolgee project identical to the names in `strings.xml`, which the Tolgee CLI push does for you.
+
+## How do I pass parameters to a translation?
+
+Pass the arguments exactly as to `getString`. Tolgee Android SDK formats with the Sprintf formatter by default, so
+`%1$s`, `%2$d` and `%.2f` placeholders in the Tolgee text work like in Android resources.
+
+```xml title="res/values/strings.xml"
+<string name="percentage_placeholder">Progress: %1$s %%</string>
+```
+
+```kotlin
+binding.textParameterized.text = getString(R.string.percentage_placeholder, progress.toString())
+```
+
+Because the layout inflater cannot know the arguments, it leaves strings with placeholders untouched during inflation.
+Always set them from code, and see the `Flow` section below for keeping them current.
+
+## How do I translate plurals?
+
+Use `getQuantityString` with the quantity, then the format arguments. Android convention repeats the quantity as the
+first argument so the text can print it, and Tolgee Android SDK follows the same convention: the quantity selects the
+CLDR form (`one`, `few`, `other`) for the current language and fills `%1$d`.
+
+```xml title="res/values/strings.xml"
+<plurals name="plr_test_placeholder_2">
+    <item quantity="one">%3$s: %1$d test out of %2$d ok</item>
+    <item quantity="other">%3$s: %1$d tests out of %2$d ok</item>
+</plurals>
+```
+
+```kotlin
+val text = resources.getQuantityString(R.plurals.plr_test_placeholder_2, passed, passed, total, "Tests")
+```
+
+Only one plural per string is supported, matching Android resources. Nested plurals inside one string are not.
+
+## How do I translate a string array?
+
+`getStringArray` returns the array from the Content Delivery, or the bundled array as fallback.
+
+```kotlin
+val items = resources.getStringArray(R.array.array_test)
+binding.textArray.text = items.joinToString(", ")
+```
+
+## How do I keep a TextView in sync when translations change?
+
+Translations arrive asynchronously and change on a language switch. `retranslate` in the base Activity re-applies
+inflated layouts, but text you set from code with arguments has to be set again. `tFlow` is the SDK's answer: a
+`Flow<String>` that emits the formatted text now and again on every change. Three extension functions from the starter
+turn that into one line per view.
+
+```kotlin title="app/src/main/java/com/example/TolgeeBinding.kt"
+import android.widget.TextView
+import androidx.annotation.ArrayRes
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import io.tolgee.Tolgee
+import io.tolgee.TolgeeAndroid
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.util.WeakHashMap
+
+private val activeBindings = WeakHashMap<TextView, Job>()
+
+/** Keeps this TextView equal to the translation for as long as its view tree is STARTED. */
+fun TextView.bindTolgee(@StringRes id: Int, vararg formatArgs: Any) =
+    bindFlow(fallback = { context.getString(id, *formatArgs) }) { tolgee ->
+        tolgee.tFlow(context, id, *formatArgs)
+    }
+
+/** Plural variant: quantity selects the form and fills %1$d; pass only the remaining arguments. */
+fun TextView.bindTolgeePlural(@PluralsRes id: Int, quantity: Int, vararg formatArgs: Any) =
+    bindFlow(fallback = { resources.getQuantityString(id, quantity, quantity, *formatArgs) }) { tolgee ->
+        tolgee.tPluralFlow(resources, id, quantity, *formatArgs)
+    }
+
+/** String-array variant, joined for display. */
+fun TextView.bindTolgeeArray(@ArrayRes id: Int, separator: CharSequence = ", ") =
+    bindFlow(fallback = { resources.getStringArray(id).joinToString(separator) }) { tolgee ->
+        tolgee.tArrayFlow(resources, id).map { it.joinToString(separator) }
+    }
+
+private fun TextView.bindFlow(fallback: () -> String, source: (TolgeeAndroid) -> Flow<String>) {
+    activeBindings.remove(this)?.cancel()
+    val tolgee = Tolgee.instanceOrNull
+    val owner = findViewTreeLifecycleOwner()
+    if (tolgee == null || owner == null) {
+        text = fallback()
+        return
+    }
+    activeBindings[this] = owner.lifecycleScope.launch {
+        owner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            source(tolgee).collect { text = it }
+        }
+    }
+}
+```
+
+With the file in place, rendering a state object becomes three lines that are safe to call on every state change,
+because each helper cancels the previous collector for the same view:
+
+```kotlin title="MainActivity.kt"
+private fun render(state: UiState) {
+    binding.textParameterized.bindTolgee(R.string.percentage_placeholder, state.progress.toString())
+    binding.textPlural.bindTolgeePlural(R.plurals.plr_test_placeholder_2, state.passed, state.total, "Tests")
+    binding.textArray.bindTolgeeArray(R.array.array_test)
+}
+```
+
+## How do I translate a Toast, a dialog or a menu?
+
+Anything that takes the Activity as its context, or a view from the Activity, goes through the wrapped context and
+needs no change: `Toast.makeText(this, R.string.saved, LENGTH_SHORT)`, `AlertDialog.Builder(this).setTitle(R.string.confirm)`,
+`Snackbar.make(view, R.string.undone, LENGTH_LONG)`. Menu items inflated from `res/menu` are translated when the menu
+is inflated; call `invalidateOptionsMenu()` from `onTranslationsChanged()` if the language can change while the menu is
+open. The toolbar title set from the manifest label is rendered by the system and does not follow the language; set
+it from code with `title = getString(R.string.app_name)` in the same hook.
+
+## How do I read a string outside an Activity?
+
+Application context, `Service`, `BroadcastReceiver`, WorkManager workers and notification builders do not go through
+the wrapped Activity context. Use the extension functions from `io.tolgee.common`, or the explicit instance. Both fall
+back to the bundled resource.
+
+```kotlin
+import io.tolgee.common.getQuantityStringT
+import io.tolgee.common.getStringT
+import io.tolgee.Tolgee
+
+val title = context.getStringT(R.string.notification_title)
+val body = context.getStringT(R.string.notification_body, userName)
+val count = context.resources.getQuantityStringT(R.plurals.new_messages, n, n)
+
+// The same through the instance, useful when Tolgee is injected for tests
+val tolgee = Tolgee.instance
+val title2 = tolgee.t(context, R.string.notification_title)
+val items = tolgee.tArray(context.resources, R.array.options)
+```
+
+Do not resolve strings before `Application.onCreate()` has finished; there is no Tolgee instance yet and the bundled
+text is returned.
+
+## How do I use translations in a ViewModel?
+
+Keep the **inputs** to strings in UI state (numbers, names), never resolved strings and never a `Context`. The
+Activity resolves them with the helpers above, so a language change re-renders text without the ViewModel knowing.
+When a ViewModel genuinely has to own text, for example a title that is also shown in a notification, expose a
+`StateFlow<String>` that follows the translation. The application context needs no wrapper.
+
+```kotlin title="app/src/main/java/com/example/TolgeeBinding.kt"
+import android.app.Application
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
+
+fun ViewModel.tolgeeText(app: Application, @StringRes id: Int, vararg formatArgs: Any): StateFlow<String> {
+    val initial = app.getString(id, *formatArgs)
+    val flow = Tolgee.instanceOrNull?.tFlow(app, id, *formatArgs) ?: flowOf(initial)
+    return flow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
+}
+```
+
+```kotlin title="MainViewModel.kt"
+class MainViewModel(app: Application) : AndroidViewModel(app) {
+    val title: StateFlow<String> = tolgeeText(app, R.string.app_name)
+}
+```
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Why does a layout string with a placeholder stay in English?',
+      answer:
+        'The layout inflater translates only strings without format placeholders, because it cannot know the arguments. Set such strings from code with getString or bindTolgee.',
+    },
+    {
+      question: 'Which plural form does Tolgee Android SDK choose?',
+      answer:
+        'The CLDR category for the current language and the quantity you pass, the same rule Android uses for getQuantityString. The Content Delivery publishes plurals as an object keyed by category.',
+    },
+    {
+      question: 'Do I need tFlow for every TextView?',
+      answer:
+        'No. Static layout text is refreshed by retranslate in the base Activity. Use tFlow, or the bindTolgee helpers, only for text you set from code with arguments.',
+    },
+    {
+      question: 'Can I get a styled CharSequence instead of a String?',
+      answer:
+        'Yes. Tolgee Android SDK exposes tStyled, tPluralStyled and tArrayStyled on the instance, and the wrapped getText keeps markup from the bundled resource.',
+    },
+    {
+      question: 'What if a key exists in strings.xml but not in Tolgee?',
+      answer:
+        'The bundled string is returned. Push strings.xml with the Tolgee CLI so both sides have the same key names, and check the name with TolgeeAndroid.getKeyFromResources when in doubt.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Switching language](/android-sdk/integrations/android-views/switching-language).
+- [Migrate an existing app](/android-sdk/migrate-existing-app): an inventory of every lookup pattern and what to do with each.
+- [API reference](/android-sdk/api) for `TolgeeAndroid`, `tFlow` and the `io.tolgee.common` extensions.

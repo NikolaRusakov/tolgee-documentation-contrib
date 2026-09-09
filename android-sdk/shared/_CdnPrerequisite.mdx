@@ -1,0 +1,19 @@
+Before you touch the app you need three things from the Tolgee Platform. The
+[Content Delivery guide](/android-sdk/content-delivery) explains each one in detail.
+
+1. A Tolgee project whose keys match the `name` attributes in your `res/values/strings.xml`. Push them with the
+   Tolgee CLI: `tolgee push` with `format: "ANDROID_XML"`.
+2. A Content Delivery created in **Project → Developer settings → Content Delivery** with format **Android SDK**.
+   Copy its URL prefix. It looks like `https://cdn.tolg.ee/your-cdn-url-prefix` and is public, so it can live in
+   the app.
+3. The list of languages published in that Content Delivery, for example `en`, `cs`, `fr`.
+
+Check the Content Delivery once from your machine. Replace the prefix with yours:
+
+```bash
+curl -sSf "https://cdn.tolg.ee/your-cdn-url-prefix/en.json" | head -c 300
+```
+
+You should see a JSON object such as `{"welcome_message":"Welcome","items_count":{"one":"…","other":"…"}}`.
+A 403 or 404 means the prefix is wrong or the delivery is not published yet. XML means the delivery has the wrong
+format. Fix it in the Tolgee Platform before you continue; nothing in the app can work around it.

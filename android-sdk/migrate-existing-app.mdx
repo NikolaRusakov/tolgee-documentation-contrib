@@ -1,20 +1,25 @@
 ---
-id: migrate-strings
-title: "Recipe: migrate resource strings to Tolgee"
-sidebar_label: "Migrate resource strings"
-description: Systematically route every string lookup of an existing Android app (getString, layouts, plurals, arrays, Compose stringResource, non-Activity contexts) through the Tolgee SDK while keeping strings.xml as fallback.
+id: migrate-existing-app
+title: Migrate an existing app to Tolgee Android SDK
+sidebar_label: Migrate an existing app
+description: "How to migrate an existing Android app to Tolgee Android SDK pattern by pattern: getString, layouts, plurals, arrays, Compose, non-Activity contexts."
 image: /img/og-images/android-sdk.png
 llm_prompt: "Read {url} and follow the recipe to migrate every resource string lookup in this Android app to the Tolgee SDK, pattern by pattern. Run the inventory commands first, keep strings.xml as fallback, and finish with the Verify section and the list of exceptions."
 keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air, ai agent]
 ---
 
-**Outcome:** every user-visible string that can be delivered over the air is resolved through Tolgee, the remaining
-exceptions are listed explicitly, key names stay identical to `strings.xml`, and the app behaves exactly as before
-when the CDN is unreachable.
+import FaqSection from '@site/src/component/docs/FaqSection';
 
-Prerequisite: the SDK is installed and initialized ([Views](./install-views.mdx) or [Compose](./install-compose.mdx)).
+Tolgee Android SDK can take over an existing Android app one lookup pattern at a time. This guide is for developers
+and coding agents migrating an app with hundreds of `getString` calls, layouts, plurals, arrays and Compose
+`stringResource` calls. You inventory every pattern with a few grep commands, apply one change per pattern, and verify.
+Afterwards every string that can be delivered over the air comes from Tolgee and the app behaves as before offline.
 
-## How resolution works (read before editing)
+Prerequisite: Tolgee Android SDK is installed and initialized, following the
+[Android Views](/android-sdk/integrations/android-views/installation) or
+[Jetpack Compose](/android-sdk/integrations/jetpack-compose/installation) installation guide.
+
+## How does Tolgee Android SDK resolve a string?
 
 - A translation is looked up by **key = resource entry name** (`R.string.welcome_message` → `welcome_message`), so no
   key mapping table is needed. Keep resource names unchanged.
@@ -28,7 +33,7 @@ Prerequisite: the SDK is installed and initialized ([Views](./install-views.mdx)
 - **Not supported over the air**: namespaced keys, more than one plural inside a single string, the app label and
   other strings rendered by the OS from the manifest, and strings consumed before `Application.onCreate()` finished.
 
-## Detect: inventory every lookup
+## How do I find every string lookup in the app?
 
 Run the whole block from the repository root and save the output; each pattern maps to one step below.
 
@@ -49,7 +54,7 @@ grep -n 'android:label' app/src/main/AndroidManifest.xml
 grep -rn 'translatable="false"' app/src/main/res/values/strings.xml
 ```
 
-## Steps
+## What do I change for each pattern?
 
 ### 1. Sync keys with the Tolgee project
 
@@ -60,10 +65,10 @@ Every key must exist on the platform before the app starts asking for it. Two eq
 ```bash
 npm install --global @tolgee/cli
 tolgee login <project API key>      # never commit this key
-tolgee push                          # uses .tolgeerc with format ANDROID_XML (see Starters)
+tolgee push                          # uses .tolgeerc with format ANDROID_XML (see [Content Delivery](/android-sdk/content-delivery))
 ```
 
-**With the Tolgee MCP server** (when the agent has it [connected](./index.mdx#give-the-agent-access-to-your-tolgee-project-mcp)):
+**With the Tolgee MCP server** (when the agent has it [connected](/android-sdk/agents#how-do-i-give-the-agent-access-to-my-tolgee-project)):
 list the project's keys, compare them with the resource names in `res/values/strings.xml`, create only the missing keys
 with their English text, and optionally trigger machine translation for the published locales. Read before writing,
 and confirm before any batch or delete operation.
@@ -202,7 +207,7 @@ For `Activity` titles set from the manifest label, update them from code: `setTi
 - Do not delete `values-xx/` folders; they are the offline fallback and the default text before the CDN answers.
 - Run `tolgee pull` before releases if you want the bundled fallbacks to match the platform.
 
-## Verify
+## How do I verify the migration?
 
 1. Re-run the **Detect** block. Pattern **D** must return nothing; patterns **A**, **B** and **C** may remain only in
    Activities/Fragments (wrapped) or as documented exceptions; pattern **E** hits must use `getStringT`/`t(...)`.
@@ -215,7 +220,7 @@ For `Activity` titles set from the manifest label, update them from code: `setTi
 
 Done means: the four checks above pass and the exception list from step 6 is written down.
 
-## Troubleshooting
+## What can go wrong?
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -226,9 +231,36 @@ Done means: the four checks above pass and the exception list from step 6 is wri
 | Key exists on the platform but bundled text is shown | Key name differs (renamed resource, namespace) | Keep names identical; check `resources.getResourceEntryName(id)` |
 | Crash `IllegalArgumentException: Only indexed or none parameters are supported` | `TolgeeMessageParams.Mapped` used with Sprintf | Use positional arguments, or switch to ICU |
 
-## Related
+## Frequently asked questions
 
-- [Install: Android Views](./install-views.mdx), [Install: Jetpack Compose](./install-compose.mdx)
-- [API quick reference](./api-reference.mdx), [Diagnostics](./diagnostics.mdx)
+<FaqSection
+  items={[
+    {
+      question: 'Do I have to migrate the whole app at once?',
+      answer:
+        'No. Each pattern is independent and the bundled resource remains the fallback, so the app can ship with some screens migrated and others not.',
+    },
+    {
+      question: 'Do key names in Tolgee have to match the resource names?',
+      answer:
+        'Yes. Tolgee Android SDK looks a string up by its resource entry name, so R.string.welcome_message is the key welcome_message. Pushing strings.xml with the Tolgee CLI keeps them identical.',
+    },
+    {
+      question: 'Can I delete the values-xx folders after migrating?',
+      answer:
+        'No. They are the offline fallback and the text shown before the first CDN response. Keep them and run tolgee pull before releases if they should match the platform.',
+    },
+    {
+      question: 'What cannot be delivered over the air?',
+      answer:
+        'The app label and other strings rendered by the OS from the manifest, strings marked translatable=false, strings needed before Tolgee.init runs, namespaced keys, and strings with two plural expressions.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Production guide](/android-sdk/production) before the first release with Tolgee Android SDK.
+- [API reference](/android-sdk/api) and [Diagnostics](/android-sdk/agents/diagnostics) when a pattern behaves unexpectedly.
 - Platform: [Android XML format](/platform/formats/android_xml), [Content Delivery](/platform/projects_and_organizations/content_delivery)
 - CLI: [project configuration](/tolgee-cli/project-configuration), [push and pull](/tolgee-cli/push-pull-strings)

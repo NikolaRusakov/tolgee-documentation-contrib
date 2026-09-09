@@ -1,0 +1,217 @@
+---
+id: installation
+title: Install Tolgee Android SDK in an Android Views app
+sidebar_label: Installation
+description: "How to install Tolgee Android SDK in an Android Views app: Gradle dependency, network config, Tolgee.init, context wrapper, first over the air string."
+image: /img/og-images/android-views.png
+llm_prompt: "Read {url} and follow it to install the Tolgee Android SDK in this Android Views app. Detect the Application class and every Activity first, then do the steps in order, then run the verification at the end and report the result."
+keywords: [tolgee, android sdk, install, android views, gradle, network security config, TolgeeContextWrapper]
+---
+
+import StarterBanner from '@site/android-sdk/shared/StarterBanner';
+import CdnPrerequisite from '@site/android-sdk/shared/_CdnPrerequisite.mdx';
+import NetworkSecurityConfig from '@site/android-sdk/shared/_NetworkSecurityConfig.mdx';
+import TolgeeInit from '@site/android-sdk/shared/_TolgeeInit.mdx';
+import PreparingForProduction from '@site/android-sdk/shared/_PreparingForProduction.mdx';
+import FaqSection from '@site/src/component/docs/FaqSection';
+
+Tolgee Android SDK adds over the air translation updates to Android apps built with Activities and XML layouts. You add
+one Gradle dependency, allow the Tolgee CDN in your network security config, initialize Tolgee in your Application class
+with your Content Delivery URL, and wrap the context of each Activity. After that your app loads translations from the
+Tolgee CDN at runtime and falls back to the bundled Android resources when offline.
+
+<StarterBanner starter="android-views" label="Android Views" />
+
+## What do I need before I start?
+
+<CdnPrerequisite />
+
+## How do I add the Tolgee dependency?
+
+Tolgee Android SDK is published on Maven Central under the group `io.tolgee.mobile-kotlin-sdk`. For Views you need the
+`core` artifact. Add it to the version catalog and to the app module. Take the version from
+[Maven Central](https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk); the SDK is pre-1.0 and
+releases often.
+
+```toml title="gradle/libs.versions.toml"
+[versions]
+tolgee = "<latest-version>" # https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk
+
+[libraries]
+tolgee-core = { group = "io.tolgee.mobile-kotlin-sdk", name = "core", version.ref = "tolgee" }
+```
+
+```kotlin title="app/build.gradle.kts"
+android {
+    buildFeatures {
+        buildConfig = true // BuildConfig.VERSION_CODE keys the on-device translation cache
+    }
+}
+
+dependencies {
+    implementation(libs.tolgee.core)
+}
+```
+
+Without a version catalog the dependency line is `implementation("io.tolgee.mobile-kotlin-sdk:core:<latest-version>")`.
+`mavenCentral()` is in the repositories of every default Android project; if you removed it, add it back to
+`dependencyResolutionManagement` in `settings.gradle.kts`. Sync the project; the build should stay green.
+
+## How do I allow the Tolgee CDN in the network security config?
+
+<NetworkSecurityConfig />
+
+## How do I initialize Tolgee in the Application class?
+
+<TolgeeInit />
+
+## How do I make getString and XML layouts use Tolgee?
+
+Android resolves `getString(R.string.key)` through the Activity's `Resources`, and inflates layouts through its
+`LayoutInflater`. `TolgeeContextWrapper` replaces both. Override `attachBaseContext` in every Activity, or once in a
+base class that all Activities extend. Fragments inherit the wrapped context through `requireContext()`.
+
+```kotlin title="app/src/main/java/com/example/BaseActivity.kt"
+import android.content.Context
+import androidx.activity.ComponentActivity // or AppCompatActivity
+import io.tolgee.TolgeeContextWrapper
+
+abstract class BaseActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))
+    }
+}
+```
+
+From now on `getString`, `getText`, `getQuantityString`, `getStringArray` and the layout attributes `android:text`,
+`android:hint` and `android:contentDescription` return the Tolgee translation when one is loaded, and the bundled
+resource otherwise. If `Tolgee.init` has not run yet, `wrap` returns a plain wrapper and nothing changes, which keeps
+unit tests and previews working.
+
+## How do I load translations and react to changes?
+
+Translations arrive asynchronously: the cache answers first, then the CDN. Two additions to the base class make every
+screen show the newest text. `preload` fetches the current language when the screen starts. `changeFlow` emits after
+each load, and `retranslate` re-applies translations to the views the inflater translated, in place.
+
+```kotlin title="app/src/main/java/com/example/BaseActivity.kt"
+import android.os.Bundle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import io.tolgee.Tolgee
+import kotlinx.coroutines.launch
+
+abstract class BaseActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val tolgee = Tolgee.instanceOrNull ?: return
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                tolgee.changeFlow.collect {
+                    tolgee.retranslate(this@BaseActivity) // layouts, in place, no recreate()
+                    onTranslationsChanged()               // text you set by hand
+                }
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Tolgee.instanceOrNull?.preload(this) // cache first, then CDN; emits changeFlow when data arrives
+    }
+
+    /** Override to re-apply strings you set from code, such as a toolbar title. */
+    protected open fun onTranslationsChanged() {}
+}
+```
+
+Text that you set from code with arguments, such as `getString(R.string.progress, 87)`, is not touched by
+`retranslate`. The [Translating](/android-sdk/integrations/android-views/translating) page shows the `Flow` helpers
+that keep such text current.
+
+## How do I verify the installation?
+
+1. Build the app:
+
+   ```bash
+   ./gradlew :app:assembleDebug
+   ```
+
+2. Run it. The first frame shows the bundled text; within a second the text from the Content Delivery replaces it.
+   On a fresh Tolgee project both are identical, so change one translation in the Tolgee Platform, wait for the
+   delivery to publish, and reopen the screen. The CDN edge caches for up to fifteen minutes.
+3. Add a temporary language switch and tap it:
+
+   ```kotlin
+   Tolgee.instance.setLocale("cs") // any published language
+   Tolgee.instance.preload(this)   // load it; changeFlow re-applies the layouts
+   ```
+
+   Every string inflated from a layout changes without the Activity being recreated.
+
+Done means: the build is green, one string visibly came from the CDN, and a language switch re-rendered the screen
+without a crash.
+
+## How do I add a new string after the installation?
+
+The loop is the same for every new string. Add it to `res/values/strings.xml` first, because the resource id is what
+your code and the fallback use. Push it with `tolgee push`, translate it in the Tolgee Platform or let machine
+translation do it, and the Content Delivery publishes it. The next `preload` on a device shows the translation, and the
+bundled English text covers the seconds in between. Nothing in the Application class changes, and no release is needed
+for the translated versions to reach users.
+
+## What can go wrong?
+
+Only bundled text is shown: `Tolgee.init` ran after the first Activity was created, or the Content Delivery prefix is
+wrong. A `CLEARTEXT communication not permitted` error: the host is missing from `network_security.xml`. Text in
+layouts translates but text set from code does not: that code runs against a context that is not wrapped. The
+[troubleshooting page](/android-sdk/troubleshooting) has the fix for each.
+
+## How do I prepare for production?
+
+<PreparingForProduction />
+
+## Frequently asked questions
+
+<FaqSection
+  items={[
+    {
+      question: 'Do I have to change every getString call?',
+      answer:
+        'No. Once the Activity context is wrapped with TolgeeContextWrapper, getString, getQuantityString, getStringArray and layout inflation resolve through Tolgee automatically. Only code that runs outside an Activity needs the explicit API.',
+    },
+    {
+      question: 'Does the context wrapper work with AppCompatActivity and Fragments?',
+      answer:
+        'Yes. Override attachBaseContext in AppCompatActivity, ComponentActivity or Activity in the same way. Fragments use the Activity context through requireContext, so they are covered.',
+    },
+    {
+      question: 'Why is buildConfig = true required?',
+      answer:
+        'TolgeeStorageProviderAndroid keys the on-device cache by BuildConfig.VERSION_CODE so that a new app version starts with an empty cache. Newer Android Gradle Plugin versions disable BuildConfig generation by default.',
+    },
+    {
+      question: 'Which SDK version should I use?',
+      answer:
+        'Always the latest release on Maven Central under the group io.tolgee.mobile-kotlin-sdk. The SDK is pre-1.0 and the public API can change between releases, so do not copy a version number from an old example.',
+    },
+    {
+      question: 'Do previews and unit tests still work?',
+      answer:
+        'Yes. When Tolgee.init has not run, TolgeeContextWrapper.wrap returns a plain wrapper and every lookup returns the bundled resource, so tests and layout previews behave exactly as before.',
+    },
+  ]}
+/>
+
+## Next steps
+
+- [Translating](/android-sdk/integrations/android-views/translating): parameters, plurals, arrays and text set from code.
+- [Switching language](/android-sdk/integrations/android-views/switching-language).
+- [Migrate an existing app](/android-sdk/migrate-existing-app) to route every existing lookup through Tolgee.
