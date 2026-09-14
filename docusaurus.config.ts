@@ -13,9 +13,10 @@ import tailwindPlugin from './plugins/tailwind-config.cjs';
 const config: Config = {
   title: 'Tolgee',
   tagline: 'Localization for everyone',
-  url: 'https://docs.tolgee.io',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
+  url: process.env.SITE_URL || 'https://docs.tolgee.io',
+  baseUrl: process.env.BASE_URL || '/',
+  // ponytail: sub-path preview builds break '../platform' links that assume baseUrl '/'
+  onBrokenLinks: process.env.BASE_URL ? 'warn' : 'throw',
   favicon: 'img/favicon.png',
   markdown: {
     hooks: {
