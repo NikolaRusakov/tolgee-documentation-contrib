@@ -14,6 +14,24 @@ once per project in the Tolgee Platform, in the **Android SDK** format, and past
 `Tolgee.init`. This page is for anyone setting up or debugging that endpoint: the format choice, the one-command check,
 getting your keys into Tolgee, one URL per environment, and what the SDK caches.
 
+## Do I need a Content Delivery at all?
+
+Only if you want translations to change without a release. A Content Delivery is what makes text update over the air:
+Tolgee Android SDK fetches it at runtime. If you are happy shipping translations inside the APK, skip this page, keep
+the [Tolgee CLI](/tolgee-cli/installation) as your workflow, and run `tolgee pull` before each release to refresh
+`res/values-xx/strings.xml`. The app then needs no Tolgee dependency at all.
+
+| | Bundled in the APK | Over the air |
+|---|---|---|
+| Needs a Content Delivery | no | yes |
+| Needs Tolgee Android SDK in the app | no | yes |
+| A corrected text reaches users | in the next release | within about fifteen minutes |
+| Works offline | always | always, from the cache or the bundled resource |
+| Translators work in Tolgee | yes | yes |
+
+The rest of this page is the over-the-air setup. The bundled workflow is documented with the
+[Tolgee CLI push and pull](/tolgee-cli/push-pull-strings) commands.
+
 ## Which Content Delivery format does Tolgee Android SDK need?
 
 Tolgee Android SDK parses **JSON only**. There are two ways Android strings can leave the Tolgee Platform, and only
