@@ -15,19 +15,10 @@ anyone adding a language switch to a Views screen.
 ## Switch the language
 
 `setLocale` accepts a BCP 47 tag or a `java.util.Locale`. It only updates the locale; `preload` loads the translations
-for it, cache first, then CDN. Put both in the base Activity so every screen has the same switch.
+for it, cache first, then CDN. The demo wires each language button to the pair of calls, where `tolgee` is
+`Tolgee.instance`.
 
-```kotlin title="BaseActivity.kt"
-protected fun switchLocale(tag: String) {
-    val tolgee = Tolgee.instanceOrNull ?: return
-    tolgee.setLocale(tag)
-    tolgee.preload(this)
-}
-```
-
-```kotlin title="MainActivity.kt"
-binding.buttonCs.setOnClickListener { switchLocale("cs") }
-binding.buttonEn.setOnClickListener { switchLocale("en") }
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/views-switch-language.kt
 ```
 
 The language is process-wide and not persisted by Tolgee Android SDK. If the app should remember it, store the tag
@@ -35,19 +26,11 @@ in your preferences and pass it to `Tolgee.init` with `locale("cs")` on the next
 
 ## React to the change
 
-Every Activity that extends the base class from [Installation](/android-sdk/integrations/android-views/installation)
-already collects `changeFlow` and calls `retranslate`, so layouts update in place. Text set from code updates through
-`bindTolgee` or the `onTranslationsChanged` hook. For code that cannot use coroutines, `ChangeListener` is the callback
-form; it runs on the main thread.
-
-```kotlin
-class MainActivity : BaseActivity() {
-
-    override fun onTranslationsChanged() {
-        supportActionBar?.title = getString(R.string.app_name) // anything set by hand
-    }
-}
-```
+The `changeFlow` collector from [Installation](/android-sdk/integrations/android-views/installation) calls `retranslate`,
+so layouts update in place after a switch. Text you set from code, such as the title or strings with arguments, is set
+again inside the same collector, or kept current with `tFlow` as described on the
+[Translating](/android-sdk/integrations/android-views/translating) page. For code that cannot use coroutines,
+`ChangeListener` is the callback form; it runs on the main thread.
 
 ```kotlin
 class LegacyActivity : Activity(), Tolgee.ChangeListener {

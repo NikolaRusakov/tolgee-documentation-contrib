@@ -30,7 +30,9 @@
       "start": "^  override fun attachBaseContext",
       "end": "^  }$",
       "expect": "TolgeeContextWrapper\\.wrap",
-      "drop": ["by the compiler"]
+      "drop": [
+        "by the compiler"
+      ]
     },
     {
       "id": "views-react-to-changes",
@@ -61,13 +63,6 @@
       "expect": "getString"
     },
     {
-      "id": "views-plurals",
-      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
-      "start": "R\\.id\\.plural_text",
-      "end": "plr_test_placeholder_2",
-      "expect": "getQuantityString"
-    },
-    {
       "id": "views-array",
       "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
       "start": "R\\.id\\.array_text",
@@ -85,12 +80,6 @@
       ]
     },
     {
-      "id": "compose-imports",
-      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
-      "lines": "27-28",
-      "expect": "io\\.tolgee\\.stringResource"
-    },
-    {
       "id": "compose-basic-text",
       "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
       "lines": "59-66",
@@ -103,12 +92,6 @@
       "expect": "fun ParametrizedText"
     },
     {
-      "id": "compose-plural-text",
-      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
-      "lines": "77-84",
-      "expect": "fun PluralText"
-    },
-    {
       "id": "compose-title-flow",
       "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
       "lines": "35-38",
@@ -119,6 +102,12 @@
       "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
       "lines": "123-136",
       "expect": "setLocale"
+    },
+    {
+      "id": "compose-is-locale-selected",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "112-121",
+      "expect": "fun isLocaleSelected"
     },
     {
       "id": "mp-setup",
@@ -137,8 +126,11 @@
       "path": "demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/App.kt",
       "start": "^@Composable",
       "end": "^}$",
-      "expect": "pluralStringResource",
-      "drop": ["compiler plugin"]
+      "expect": "stringResource",
+      "drop": [
+        "compiler plugin",
+        "pluralStringResource\\(Res"
+      ]
     },
     {
       "id": "mp-tolgeerc",
@@ -157,6 +149,8 @@
     "BaseActivity, bindTolgee helpers, tolgeeText ViewModel helper, per-environment BuildConfig URL: exist only in the starter apps, which are not part of any upstream tag.",
     "Compose installation page init block: examplejetpack/MyApplication.kt lacks availableLocaleTags and defaultLanguage (Tolgee defect to report); the Views demo block is used instead.",
     "Demo comments that mention the Tolgee compiler plugin (views MainActivity, multiplatform App) are removed with \"drop\": the plugin is disabled since Kotlin 2.2 and is not part of any release. Report to the SDK repository.",
-    "Compose demo imports only stringResource and pluralStringResource; stringArrayResource is described in prose."
+    "Compose demo imports only stringResource and pluralStringResource; stringArrayResource is described in prose.",
+    "Views plural call: the demo calls getQuantityString(R.plurals.plr_test_placeholder_2, 2, 3, \"Plurals\") with two arguments for a format that has three placeholders (%3$s, %1$d, %2$d). The page keeps a hand-written call that matches its strings.xml. Report to the SDK repository.",
+    "Compose plural call: both Compose demos call pluralStringResource(plr_test_placeholder_2, n, p, \"Plurals\") with two format arguments for a string with three placeholders. The Multiplatform page drops that line and the Compose pages keep a hand-written call that matches the strings. Report to the SDK repository."
   ]
 }

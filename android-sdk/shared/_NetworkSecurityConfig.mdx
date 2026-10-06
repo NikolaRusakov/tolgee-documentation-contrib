@@ -1,15 +1,7 @@
 Tolgee Android SDK downloads translations over HTTPS from the Tolgee CDN. Android only allows that for hosts listed
 in the app's network security config. Create the file, or add the two Tolgee domains to the one you have:
 
-```xml title="app/src/main/res/xml/network_security.xml"
-<?xml version="1.0" encoding="utf-8"?>
-<network-security-config xmlns:android="http://schemas.android.com/apk/res/android">
-    <domain-config>
-        <domain includeSubdomains="true">tolgee.io</domain>
-        <domain includeSubdomains="true">tolg.ee</domain>
-        <!-- Self-hosted Tolgee or a custom CDN: add its host here. -->
-    </domain-config>
-</network-security-config>
+```xml title="app/src/main/res/xml/network_security.xml" file=<rootDir>/android-sdk/_snippets/network-security.xml
 ```
 
 Reference the file from the manifest and declare the internet permission:

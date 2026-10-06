@@ -22,13 +22,7 @@ from the Compose starter app.
 Import the helper from `io.tolgee` and pass the resource id. Tolgee Android SDK looks the key up by the resource entry
 name, so `R.string.description` is the key `description` in your Tolgee project.
 
-```kotlin
-import io.tolgee.stringResource
-
-@Composable
-fun Description() {
-    Text(stringResource(R.string.description))
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-basic-text.kt
 ```
 
 The composable renders the bundled string on the first frame and recomposes with the Tolgee text as soon as the cache
@@ -39,8 +33,7 @@ or the CDN answers.
 Pass the arguments after the id. The default Sprintf formatter fills `%1$s`, `%2$d` and `%.2f` placeholders in the
 same order as `getString`.
 
-```kotlin
-Text(stringResource(R.string.percentage_placeholder, progress.toString())) // "Progress: %1$s %%"
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-parametrized-text.kt
 ```
 
 ## Translate plurals
@@ -99,18 +92,9 @@ fun Greeting(tolgee: Tolgee) {
 ## Translate text outside a composable
 
 The window title, notifications and other imperative strings are not composables. Drive them from `tFlow`, which
-emits the current text and re-emits on every change, in the Activity's `lifecycleScope`.
+emits the current text and re-emits on every change. Collect it in the Activity's `lifecycleScope`, as the demo does for the title.
 
-```kotlin title="MainActivity.kt"
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    Tolgee.instanceOrNull?.let { tolgee ->
-        lifecycleScope.launch {
-            tolgee.tFlow(this@MainActivity, R.string.app_name).collect { title = it }
-        }
-    }
-    setContent { MaterialTheme { StarterScreen() } }
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-title-flow.kt
 ```
 
 For one-off reads outside the UI, for example in a `Service`, use the `io.tolgee.common` extensions:

@@ -78,20 +78,7 @@ Tolgee Android SDK looks a string up by its resource entry name: `R.string.welco
 [Tolgee CLI](/tolgee-cli/installation). Put this file in the app module and run `tolgee login <project API key>` once,
 then `tolgee push`:
 
-```json title=".tolgeerc"
-{
-  "$schema": "https://docs.tolgee.io/cli-schema.json",
-  "projectId": 12345,
-  "format": "ANDROID_XML",
-  "push": {
-    "filesTemplate": "./src/main/res/values-{languageTag}/strings.xml",
-    "language": ["en", "cs", "fr"]
-  },
-  "pull": {
-    "path": ".",
-    "fileStructureTemplate": "./src/main/res/values-{languageTag}/strings.{extension}"
-  }
-}
+```json title=".tolgeerc" file=<rootDir>/android-sdk/_snippets/views-tolgeerc.json
 ```
 
 The API key stays on your machine or in CI; it never enters the app. From then on the loop is: add the string to

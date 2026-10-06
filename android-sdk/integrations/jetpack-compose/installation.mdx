@@ -71,6 +71,7 @@ Never call `Tolgee.init` inside a composable. In a Compose Multiplatform project
 ## Read strings in composables
 
 Replace three imports. The Tolgee helpers have the same signatures as the Compose originals, so no call site changes.
+The demo app shows a static string and a string with a parameter:
 
 ```diff
 - import androidx.compose.ui.res.stringResource
@@ -81,20 +82,10 @@ Replace three imports. The Tolgee helpers have the same signatures as the Compos
 + import io.tolgee.stringArrayResource
 ```
 
-```kotlin title="MainActivity.kt"
-import io.tolgee.pluralStringResource
-import io.tolgee.stringArrayResource
-import io.tolgee.stringResource
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-basic-text.kt
+```
 
-@Composable
-fun StarterScreen(passed: Int, total: Int) {
-    Column {
-        Text(stringResource(R.string.description))                                        // static
-        Text(stringResource(R.string.percentage_placeholder, "87"))                         // %1$s
-        Text(pluralStringResource(R.plurals.plr_test_placeholder_2, passed, total, "Tests")) // quantity fills %1$d
-        Text(stringArrayResource(R.array.array_test).joinToString())                        // array
-    }
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-parametrized-text.kt
 ```
 
 Each helper collects `tolgee.tFlow(...)` as state with the bundled resource as the initial value. The first frame shows

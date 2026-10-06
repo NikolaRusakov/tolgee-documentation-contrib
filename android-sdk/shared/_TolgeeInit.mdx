@@ -1,29 +1,13 @@
 Tolgee Android SDK is configured once, in `Application.onCreate()`, before any Activity or composable exists.
 Register the class in the manifest with `android:name=".MyApplication"` if your app has no Application subclass yet.
 
-```kotlin title="app/src/main/java/com/example/MyApplication.kt"
-import android.app.Application
-import io.tolgee.Tolgee
-import io.tolgee.storage.TolgeeStorageProviderAndroid
-
-class MyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        Tolgee.init {
-            contentDelivery {
-                // Content Delivery URL prefix from Tolgee Platform (format "Android SDK").
-                url = "https://cdn.tolg.ee/your-cdn-url-prefix"
-                // Persistent cache under filesDir. A new version code starts with an empty cache.
-                storage = TolgeeStorageProviderAndroid(this@MyApplication, BuildConfig.VERSION_CODE)
-                // Languages published in the Content Delivery. Enables fallback such as en-US -> en.
-                availableLocaleTags("en", "cs", "fr")
-            }
-            // Used when the device language is not published.
-            defaultLanguage("en")
-        }
-    }
-}
+```kotlin title="app/src/main/java/com/example/MyApplication.kt" file=<rootDir>/android-sdk/_snippets/init.kt
 ```
+
+Four settings do the work. `url` is the Content Delivery URL prefix from the Tolgee Platform, in the format
+"Android SDK". `storage` keeps the last download on the device under `filesDir`, and a new version code starts with an
+empty cache. `availableLocaleTags` lists the languages published in the Content Delivery, which enables fallback such
+as `en-US` to `en`. `defaultLanguage` is used when the device language is not published.
 
 Two defaults are correct for a Content Delivery in the "Android SDK" format and are therefore not written above:
 `path = { "$it.json" }`, the file layout the format publishes, and `Tolgee.Formatter.Sprintf`, which understands

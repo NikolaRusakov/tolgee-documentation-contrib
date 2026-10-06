@@ -8,7 +8,6 @@ fun App() {
             // Use tolgee version of stringResource composable
             Text(text = stringResource(Res.string.description))
             Text(text = stringResource(Res.string.percentage_placeholder, "87"))
-            Text(text = pluralStringResource(Res.plurals.plr_test_placeholder_2, 2, 10, "Plurals"))
             Button(
                 onClick = {
                     tolgee.setLocale("en")

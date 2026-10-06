@@ -14,33 +14,14 @@ switcher composable therefore needs no manual reload: it observes the current la
 
 ## Build a locale switcher
 
-The starter app's switcher observes the current language and disables the button of the active one. Language names
-are deliberately not translated.
+The demo app's switcher renders one segmented button per language. Each click calls `setLocale`, and
+`isLocaleSelected` observes `changeFlow` so the active language stays highlighted. Language names are deliberately not
+translated. Call the button once per language, for example with `en`, `cs` and `fr`.
 
-```kotlin title="MainActivity.kt"
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import io.tolgee.Tolgee
-import kotlinx.coroutines.flow.map
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-change-locale-button.kt
+```
 
-@Composable
-fun LocaleSwitcher() {
-    val tolgee = Tolgee.instanceOrNull ?: return
-    val locale by tolgee.changeFlow
-        .map { tolgee.getLocale() }
-        .collectAsState(initial = tolgee.getLocale())
-
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("en" to "English", "cs" to "Čeština", "fr" to "Français").forEach { (tag, label) ->
-            Button(
-                onClick = { tolgee.setLocale(tag) }, // stringResource composables reload on their own
-                enabled = locale.language != tag,
-            ) {
-                Text(label)
-            }
-        }
-    }
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-is-locale-selected.kt
 ```
 
 `setLocale` accepts a BCP 47 tag, a `java.util.Locale`, or a Compose `androidx.compose.ui.text.intl.Locale`. The

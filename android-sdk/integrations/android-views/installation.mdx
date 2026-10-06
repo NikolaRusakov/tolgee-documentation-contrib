@@ -69,17 +69,7 @@ Android resolves `getString(R.string.key)` through the Activity's `Resources`, a
 `LayoutInflater`. `TolgeeContextWrapper` replaces both. Override `attachBaseContext` in every Activity, or once in a
 base class that all Activities extend. Fragments inherit the wrapped context through `requireContext()`.
 
-```kotlin title="app/src/main/java/com/example/BaseActivity.kt"
-import android.content.Context
-import androidx.activity.ComponentActivity // or AppCompatActivity
-import io.tolgee.TolgeeContextWrapper
-
-abstract class BaseActivity : ComponentActivity() {
-
-    override fun attachBaseContext(newBase: Context?) {
-        super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))
-    }
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/views-wrap-context.kt
 ```
 
 From now on `getString`, `getText`, `getQuantityString`, `getStringArray` and the layout attributes `android:text`,
@@ -89,45 +79,19 @@ unit tests and previews working.
 
 ## Load translations and react to changes
 
-Translations arrive asynchronously: the cache answers first, then the CDN. Two additions to the base class make every
-screen show the newest text. `preload` fetches the current language when the screen starts. `changeFlow` emits after
-each load, and `retranslate` re-applies translations to the views the inflater translated, in place.
+Translations arrive asynchronously: the cache answers first, then the CDN. Two additions to the Activity make the screen
+show the newest text: a collector on `changeFlow` and a `preload` call.
 
-```kotlin title="app/src/main/java/com/example/BaseActivity.kt"
-import android.os.Bundle
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import io.tolgee.Tolgee
-import kotlinx.coroutines.launch
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/views-react-to-changes.kt
+```
 
-abstract class BaseActivity : ComponentActivity() {
+`changeFlow` emits after every load, and `retranslate` re-applies translations to the views the inflater translated, in
+place, without recreating the Activity. Text you set by hand, such as the title, has to be set again inside the
+collector. In the demo, `updateParameterizedStrings` is the app's own function that re-reads the strings with
+arguments, and `tolgee` is `Tolgee.instance`, read once in the Activity. `preload` fetches the current language when
+the screen starts, cache first and then the CDN, and triggers `changeFlow` when new data arrives.
 
-    override fun attachBaseContext(newBase: Context?) {
-        super.attachBaseContext(TolgeeContextWrapper.wrap(newBase))
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val tolgee = Tolgee.instanceOrNull ?: return
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                tolgee.changeFlow.collect {
-                    tolgee.retranslate(this@BaseActivity) // layouts, in place, no recreate()
-                    onTranslationsChanged()               // text you set by hand
-                }
-            }
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Tolgee.instanceOrNull?.preload(this) // cache first, then CDN; emits changeFlow when data arrives
-    }
-
-    /** Override to re-apply strings you set from code, such as a toolbar title. */
-    protected open fun onTranslationsChanged() {}
-}
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/views-preload.kt
 ```
 
 Text that you set from code with arguments, such as `getString(R.string.progress, 87)`, is not touched by

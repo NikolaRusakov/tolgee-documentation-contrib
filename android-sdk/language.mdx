@@ -76,8 +76,8 @@ id)`, the Compose helpers. The key-based `t(key)` returns `null` instead, and `t
 ## React to a language change
 
 `setLocale` only updates the locale flow. Anything collecting `tFlow`, and every Compose helper, reloads on its own.
-Imperative Views code calls `preload(activity)` afterwards and updates when `changeFlow` emits; the base Activity in
-the [Views installation guide](/android-sdk/integrations/android-views/installation) does both. `ChangeListener` is
+Imperative Views code calls `preload(activity)` afterwards and updates when `changeFlow` emits; the `changeFlow` collector and `onStart` in
+the [Views installation guide](/android-sdk/integrations/android-views/installation) do both. `ChangeListener` is
 the callback form for Java code; it runs on the main thread.
 
 In Compose, `setLocale` also accepts a `androidx.compose.ui.text.intl.Locale`, and `Tolgee.Config.Builder.locale`

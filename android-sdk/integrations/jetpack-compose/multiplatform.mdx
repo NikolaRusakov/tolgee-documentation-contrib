@@ -51,20 +51,7 @@ Compose Multiplatform keeps strings in `composeResources/values*/strings.xml` an
 objects. Tolgee Android SDK looks a resource up by that name, so push the files in the `COMPOSE_XML` format and the
 keys match without mapping:
 
-```json title=".tolgeerc"
-{
-  "$schema": "https://docs.tolgee.io/cli-schema.json",
-  "projectId": 12345,
-  "format": "COMPOSE_XML",
-  "push": {
-    "filesTemplate": "./composeApp/src/commonMain/composeResources/values-{languageTag}/strings.xml",
-    "language": ["en", "cs", "fr"]
-  },
-  "pull": {
-    "path": ".",
-    "fileStructureTemplate": "./composeApp/src/commonMain/composeResources/values-{languageTag}/strings.{extension}"
-  }
-}
+```json title=".tolgeerc" file=<rootDir>/android-sdk/_snippets/mp-tolgeerc.json
 ```
 
 Create the Content Delivery in the **Android SDK** format, as for Android; it publishes the same `<language>.json`
@@ -76,62 +63,17 @@ the curl check.
 Put the configuration in one common function and call it from each platform entry point before the first composition:
 `Application.onCreate()` on Android, `main()` on desktop, the app delegate or the SwiftUI `App` initializer on iOS.
 
-```kotlin title="commonMain/Setup.kt"
-import io.tolgee.Tolgee
-
-object TolgeeSetup {
-    fun init(storage: TolgeeStorageProvider? = null) {
-        Tolgee.init {
-            contentDelivery {
-                url = "https://cdn.tolg.ee/your-cdn-url-prefix"
-                this.storage = storage          // see below; null means no persistent cache
-                availableLocaleTags("en", "cs", "fr")
-            }
-            defaultLanguage("en")
-        }
-    }
-}
+```kotlin title="commonMain/Setup.kt" file=<rootDir>/android-sdk/_snippets/mp-setup.kt
 ```
 
-```kotlin title="jvmMain/Main.kt"
-fun main() {
-    TolgeeSetup.init(storage = FileStorageProvider(File(System.getProperty("user.home"), ".myapp/tolgee")))
-    singleWindowApplication(title = "My app") { App() }
-}
-```
-
-```kotlin title="androidMain/MyApplication.kt"
-class MyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        TolgeeSetup.init(storage = TolgeeStorageProviderAndroid(this, BuildConfig.VERSION_CODE))
-    }
-}
-```
-
+This is the minimum. Add `availableLocaleTags(...)` and `defaultLanguage(...)` to enable
+[language fallback](/android-sdk/language), and a `storage` provider for a persistent cache, as in the
+[Content Delivery guide](/android-sdk/content-delivery#configure-path-locales-and-storage).
 ## Read translations in shared composables
 
-The same three imports as on Android, with `Res` objects instead of `R` ids:
+The same helpers as on Android, imported from `io.tolgee`, with `Res` objects instead of `R` ids:
 
-```kotlin title="commonMain/App.kt"
-import io.tolgee.Tolgee
-import io.tolgee.pluralStringResource
-import io.tolgee.stringResource
-import myapp.composeapp.generated.resources.Res
-import myapp.composeapp.generated.resources.description
-import myapp.composeapp.generated.resources.percentage_placeholder
-import myapp.composeapp.generated.resources.plr_test_placeholder_2
-
-@Composable
-fun App() {
-    val tolgee = Tolgee.instance
-    Column {
-        Text(stringResource(Res.string.description))
-        Text(stringResource(Res.string.percentage_placeholder, "87"))
-        Text(pluralStringResource(Res.plurals.plr_test_placeholder_2, 2, 10, "Plurals"))
-        Button(onClick = { tolgee.setLocale("fr") }) { Text("Français") }
-    }
-}
+```kotlin title="commonMain/App.kt" file=<rootDir>/android-sdk/_snippets/mp-app.kt
 ```
 
 The helpers recompose when the language changes and fall back to the Compose resource when Tolgee is not initialized,
@@ -169,7 +111,7 @@ fun LanguageMenu() {
 ```
 
 The language is not persisted by the SDK; store the tag with your platform's settings mechanism and pass it to
-`locale(tag)` in `TolgeeSetup.init` on the next start.
+`locale(tag)` in `Tolgee.init` on the next start.
 
 ## Verify the setup
 
