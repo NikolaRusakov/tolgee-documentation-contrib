@@ -45,11 +45,5 @@ module.exports = {
     'troubleshooting',
     'migrate-existing-app',
     'api',
-    {
-      type: 'category',
-      label: 'For AI agents',
-      link: { type: 'doc', id: 'agents/index' },
-      items: ['agents/diagnostics'],
-    },
   ],
 };

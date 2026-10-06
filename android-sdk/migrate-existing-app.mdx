@@ -4,14 +4,13 @@ title: Migrate an existing app to Tolgee Android SDK
 sidebar_label: Migrate an existing app
 description: "How to migrate an existing Android app to Tolgee Android SDK pattern by pattern: getString, layouts, plurals, arrays, Compose, non-Activity contexts."
 image: /img/og-images/android-sdk.png
-llm_prompt: "Read {url} and follow the recipe to migrate every resource string lookup in this Android app to the Tolgee SDK, pattern by pattern. Run the inventory commands first, keep strings.xml as fallback, and finish with the Verify section and the list of exceptions."
-keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air, ai agent]
+keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air]
 ---
 
 import FaqSection from '@site/src/component/docs/FaqSection';
 
 Tolgee Android SDK can take over an existing Android app one lookup pattern at a time. This guide is for developers
-and coding agents migrating an app with hundreds of `getString` calls, layouts, plurals, arrays and Compose
+migrating an app with hundreds of `getString` calls, layouts, plurals, arrays and Compose
 `stringResource` calls. You inventory every pattern with a few grep commands, apply one change per pattern, and verify.
 Afterwards every string that can be delivered over the air comes from Tolgee and the app behaves as before offline.
 
@@ -58,29 +57,16 @@ grep -rn 'translatable="false"' app/src/main/res/values/strings.xml
 
 ### 1. Sync keys with the Tolgee project
 
-Every key must exist on the platform before the app starts asking for it. Two equivalent routes:
-
-**With the Tolgee CLI** (scriptable, keeps `strings.xml` as the source of truth):
+Every key must exist on the platform before the app starts asking for it. Push them with the Tolgee CLI, which keeps `strings.xml` as the source of truth:
 
 ```bash
 npm install --global @tolgee/cli
 tolgee login <project API key>      # never commit this key
-tolgee push                          # uses .tolgeerc with format ANDROID_XML (see [Content Delivery](/android-sdk/content-delivery))
-```
-
-**With the Tolgee MCP server** (when the agent has it [connected](/android-sdk/agents#how-do-i-give-the-agent-access-to-my-tolgee-project)):
-list the project's keys, compare them with the resource names in `res/values/strings.xml`, create only the missing keys
-with their English text, and optionally trigger machine translation for the published locales. Read before writing,
-and confirm before any batch or delete operation.
-
-```text title="Agent prompt for the MCP route"
-Using the Tolgee MCP server: list the keys of project <id>, compare with the <string name="..."> entries in
-app/src/main/res/values/strings.xml, create the missing keys with the English text from the file, and report keys that
-exist in Tolgee but not in the app. Do not delete anything.
+tolgee push                          # uses .tolgeerc with format ANDROID_XML, see the Content Delivery page
 ```
 
 Then publish the Content Delivery (format **Android SDK**) or wait for auto-publish. From now on new strings follow
-the same loop: add to `strings.xml` → push or create through MCP → translate on the platform → published over the air.
+the same loop: add to `strings.xml` → push → translate on the platform → published over the air.
 
 ### 2. Route Activity-scoped lookups through the context wrapper (Views)
 
@@ -261,6 +247,6 @@ Done means: the four checks above pass and the exception list from step 6 is wri
 ## Next steps
 
 - [Production guide](/android-sdk/production) before the first release with Tolgee Android SDK.
-- [API reference](/android-sdk/api) and [Diagnostics](/android-sdk/agents/diagnostics) when a pattern behaves unexpectedly.
+- [API reference](/android-sdk/api) and [Troubleshooting](/android-sdk/troubleshooting) when a pattern behaves unexpectedly.
 - Platform: [Android XML format](/platform/formats/android_xml), [Content Delivery](/platform/projects_and_organizations/content_delivery)
 - CLI: [project configuration](/tolgee-cli/project-configuration), [push and pull](/tolgee-cli/push-pull-strings)

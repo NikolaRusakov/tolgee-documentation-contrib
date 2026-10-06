@@ -20,8 +20,8 @@ const llmsTxt = [
       'Tolgee is an open-source localization platform. These docs cover the Tolgee Platform (translation management, content delivery CDN, REST API), the Tolgee CLI, and the JavaScript, Android and iOS SDKs. Every link below points to a Markdown version of a documentation page.',
     // Default categorisation depth (route rules below override it per section).
     depth: 2,
-    // Section order in llms.txt. The Android SDK entry ramp goes first so a coding agent
-    // reading only the top of the file lands on the Content Delivery and install guides.
+    // Section order in llms.txt. The Android SDK entry ramp goes first so the top of the
+    // file lands on Get started, the Content Delivery and the installation guides.
     includeOrder: [
       '/android-sdk/get-started',
       '/android-sdk/content-delivery',
@@ -68,11 +68,6 @@ const llmsTxt = [
           route: '/android-sdk/integrations/jetpack-compose/**',
           depth: 2,
           categoryName: 'Android SDK: Jetpack Compose',
-        },
-        {
-          route: '/android-sdk/agents/**',
-          depth: 2,
-          categoryName: 'Android SDK: guides for AI agents',
         },
         // Top-level SDK pages stay in one flat list instead of one subcategory per page.
         { route: '/android-sdk/**', depth: 1, categoryName: 'Android SDK' },

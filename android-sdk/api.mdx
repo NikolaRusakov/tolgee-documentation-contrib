@@ -4,14 +4,13 @@ title: Tolgee Android SDK API reference
 sidebar_label: API
 description: Map of the public Tolgee Android SDK API, core and compose modules, with links into the generated KDoc reference and its Markdown twin.
 image: /img/og-images/android-sdk.png
-llm_prompt: "Read {url} so you can answer questions about the Tolgee Android SDK API and look up any class or member in the linked Markdown reference."
-keywords: [tolgee, android, api reference, dokka, kdoc, markdown, llms.txt, ai agent]
+keywords: [tolgee, android, api reference, dokka, kdoc, markdown, llms.txt]
 ---
 
 import FaqSection from '@site/src/component/docs/FaqSection';
 
-Tolgee Android SDK publishes its full API reference, generated from KDoc, on GitHub Pages, with a Markdown twin of every
-page for coding agents. This page is the map for developers and agents who need to find a class or member quickly: it
+Tolgee Android SDK publishes its full API reference, generated from KDoc, on GitHub Pages, with a Markdown copy of every
+page. This page is the map for developers who need to find a class or member quickly: it
 lists what exists in the `core` and `compose` modules with abbreviated signatures and links into the generated
 reference. The source of truth is that reference and the binary API dumps of the release you use.
 
@@ -27,7 +26,7 @@ exist only in the Android source set, which is what `Tolgee.instance` is on Andr
 | Resource | URL |
 |---|---|
 | HTML reference | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/` |
-| Index for agents (`llms.txt`) | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt` |
+| Index (`llms.txt`) | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms.txt` |
 | Full text (`llms-full.txt`) | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/llms-full.txt` |
 | Markdown pages | `https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/<module>/<-module>/<package>/<-type>/index.md` |
 | Binary API dumps | `core/api/android/core.api`, `compose/api/android/compose.api` in the repository |
@@ -161,6 +160,6 @@ current release; do not add it to consumer builds.
 
 ## Next steps
 
-- [Diagnostics](/android-sdk/agents/diagnostics) for how to use the reference when investigating behaviour.
+- [Loading and caching](/android-sdk/caching) for what the SDK does between a call and a translation.
 - [API for Android Views](/android-sdk/integrations/android-views/api) and
   [API for Jetpack Compose](/android-sdk/integrations/jetpack-compose/api) for the toolkit-specific surface.

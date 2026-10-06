@@ -26,7 +26,7 @@ A second, independent decision is where the keys themselves come from. The two c
 | Keys come from | Bundled in the APK | Over the air |
 |---|---|---|
 | **`strings.xml` in your repository** | Push with the CLI, translate on the platform, `tolgee pull` before each release | Push with the CLI, the Content Delivery serves JSON, the app reads by resource id |
-| **The Tolgee Platform** (web app, REST API or MCP server) | Create keys on the platform, `tolgee pull` generates `values-xx/strings.xml` | Create keys on the platform, the Content Delivery serves JSON, the app reads by key name |
+| **The Tolgee Platform** (web app or REST API) | Create keys on the platform, `tolgee pull` generates `values-xx/strings.xml` | Create keys on the platform, the Content Delivery serves JSON, the app reads by key name |
 
 The **column** decides whether you install the SDK. The **row** decides only how keys reach Tolgee, and you can change
 it later without touching app code.
@@ -58,8 +58,8 @@ Every guide starts from the same three things. Prepare them once per project in 
 [Content Delivery guide](/android-sdk/content-delivery) explains each in detail.
 
 1. **A project with your keys.** Either install the [Tolgee CLI](/tolgee-cli/installation) and push
-   `res/values/strings.xml` with `format: "ANDROID_XML"`, or create the keys on the platform through the web app, the
-   REST API or the [MCP server](/platform/integrations/mcp_server/about). Key names must equal the resource entry
+   `res/values/strings.xml` with `format: "ANDROID_XML"`, or create the keys on the platform through the web app or
+   the REST API. Key names must equal the resource entry
    names the app looks up.
 2. **A Content Delivery in the "Android SDK" format.** It publishes one JSON file per language at a public URL prefix.
    Tolgee Android SDK reads JSON only; a delivery in another format produces an app that silently shows bundled text.

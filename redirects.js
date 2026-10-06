@@ -553,6 +553,11 @@ module.exports.redirects = {
       to: '/android-sdk/migrate-existing-app',
     },
     { from: '/android-sdk/agents/api-reference', to: '/android-sdk/api' },
+    { from: '/android-sdk/agents', to: '/android-sdk/get-started' },
+    {
+      from: '/android-sdk/agents/diagnostics',
+      to: '/android-sdk/troubleshooting',
+    },
     ...BLOG_REDIRECTS,
   ],
   createRedirects(existingPath) {
