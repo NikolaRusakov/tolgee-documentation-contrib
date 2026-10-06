@@ -12,7 +12,7 @@ error. This page is for anyone whose app shows bundled text, the wrong language 
 names one symptom, the check that confirms the cause, and the fix, for Android Views and Jetpack Compose alike.
 Start with the Content Delivery check; it explains most cases.
 
-## Why does the app show only bundled strings?
+## Fix an app that shows only bundled strings
 
 Check the Content Delivery first:
 
@@ -30,27 +30,27 @@ If the JSON is fine: `Tolgee.init` must run in `Application.onCreate()`, before 
 earlier wraps a plain context and never translates until it is recreated. In Views, confirm that the Activity overrides
 `attachBaseContext` with `TolgeeContextWrapper.wrap`. In Compose, confirm the imports come from `io.tolgee`.
 
-## Why do I get "CLEARTEXT communication not permitted" or an SSL error?
+## Fix a CLEARTEXT or SSL error
 
 The CDN host is missing from `res/xml/network_security.xml`, or the file is not referenced from the manifest with
 `android:networkSecurityConfig`. Add `tolgee.io` and `tolg.ee` for Tolgee Cloud, or your own host, and check that the
 manifest declares `android.permission.INTERNET`. See the
-[installation page](/android-sdk/integrations/android-views/installation#how-do-i-allow-the-tolgee-cdn-in-the-network-security-config).
+[installation page](/android-sdk/integrations/android-views/installation#allow-the-tolgee-cdn-in-network-config).
 
-## Why do layouts translate but text set from code does not?
+## Translate text set from code
 
 That code runs against a context that is not wrapped: the Application context, a `Service`, a ViewModel holding
 `Application`, a notification builder. Use `context.getStringT(R.string.key, args)` from `io.tolgee.common`, or
 `Tolgee.instance.t(context, R.string.key, args)`, or wrap that context once with `TolgeeContextWrapper.wrap`. Details
-in [Translating in Android Views](/android-sdk/integrations/android-views/translating#how-do-i-read-a-string-outside-an-activity).
+in [Translating in Android Views](/android-sdk/integrations/android-views/translating#read-a-string-outside-an-activity).
 
-## Why does a layout string with a placeholder stay untranslated?
+## Translate layout strings with placeholders
 
 The layout inflater skips strings with format placeholders on purpose, because it cannot know the arguments. Set them
 from code, and keep them current with `tFlow` or the `bindTolgee` helper from the
-[Translating page](/android-sdk/integrations/android-views/translating#how-do-i-keep-a-textview-in-sync-when-translations-change).
+[Translating page](/android-sdk/integrations/android-views/translating#keep-a-textview-in-sync).
 
-## Why does switching the language do nothing?
+## Fix a language switch that does nothing
 
 - **Views**: `setLocale` only updates the locale. Call `preload(activity)` afterwards; `changeFlow` then emits and
   `retranslate` re-applies the layouts.
@@ -58,20 +58,20 @@ from code, and keep them current with `tFlow` or the `bindTolgee` helper from th
   fallback resolved to `defaultLanguage`. Publish it and add it to the list.
 - The switch shows the new language but old text: the CDN edge caches for up to fifteen minutes after publishing.
 
-## Why is the plural form wrong?
+## Fix a wrong plural form
 
 The quantity was passed only as a format argument. The quantity parameter selects the CLDR form and is also passed as
 `%1$d`; pass only the remaining arguments after it. Views: `getQuantityString(id, n, n, …)`. Compose:
 `pluralStringResource(id, n, …)`. Nested plurals inside one string are not supported.
 
-## Why do placeholders render literally, such as `%1$s` or `{name}`?
+## Fix placeholders that render literally
 
 The formatter does not match the delivery. A Content Delivery in the "Android SDK" format uses Android placeholders
 and needs the default `Tolgee.Formatter.Sprintf`. ICU messages with `{name}` need `Tolgee.Formatter.ICU`. Named
 parameters (`TolgeeMessageParams.Mapped`) require ICU; with Sprintf they throw
 `IllegalArgumentException: Only indexed or none parameters are supported`. See [Formatting](/android-sdk/formatting).
 
-## Why does the Compose build fail on stringResource?
+## Fix a Compose build error on stringResource
 
 - `Unresolved reference: stringResource`: the `androidx.compose.ui.res` import was removed but
   `import io.tolgee.stringResource` was not added.
@@ -79,13 +79,13 @@ parameters (`TolgeeMessageParams.Mapped`) require ICU; with Sprintf they throw
 - Compose Multiplatform keys never resolve: the resource name differs from the Tolgee key. Push resources with
   `format: "COMPOSE_XML"` so the names match.
 
-## Why does a key that exists in Tolgee still show the bundled text?
+## Fix a key that shows bundled text
 
 The key name differs from the resource entry name. Tolgee Android SDK uses `resources.getResourceEntryName(id)`, so a
 renamed resource or a key in a namespace is not found. Keep names identical, push with the Tolgee CLI, and publish a
 single namespace-less delivery. `TolgeeAndroid.getKeyFromResources(context, id)` prints the name the SDK looks for.
 
-## Why is the first frame in English on a Czech device?
+## Avoid a flash of English on first frame
 
 That is the bundled resource for the device configuration, shown until the cache or the CDN answers, which takes a
 few hundred milliseconds on a warm cache. If the text never changes, the Czech translation is not published, or `cs`
@@ -93,14 +93,14 @@ is missing from `availableLocaleTags` so fallback resolved to `defaultLanguage`.
 that, call `preload` on the splash screen and keep `values-cs/strings.xml` up to date with `tolgee pull` so the first
 frame is already right.
 
-## Why does a self-hosted CDN fail while Tolgee Cloud works?
+## Fix a failing self-hosted CDN
 
 Three usual causes. The host is not listed in `network_security.xml`, which produces the CLEARTEXT or SSL error above.
 The files are not at `<url>/<languageTag>.json`, which needs a `path` override or a fix on the server. The server sends
 the files with a content type or CORS setting the SDK does not care about, but a redirect to another host that is not
 allowed. Run the curl check against the exact URL the app uses and compare it with the working Tolgee Cloud prefix.
 
-## How do I investigate further?
+## Investigate further
 
 [Loading and caching](/android-sdk/caching) lists the loading sequence and what each API does before data arrives.
 The generated [API reference](/android-sdk/api) and the SDK source settle anything else. The two [starter apps](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters) are a

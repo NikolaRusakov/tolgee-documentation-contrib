@@ -13,7 +13,7 @@ Jetpack Compose. You keep your `strings.xml`, push the keys to the Tolgee Platfo
 with a Content Delivery URL. The app then loads translations from the Tolgee CDN at runtime, switches language without
 a restart, and falls back to the bundled Android resources when it is offline.
 
-## What does Tolgee Android SDK do?
+## See what Tolgee Android SDK does
 
 Tolgee Android SDK replaces the moment a translation is decided. Without it, the text of `R.string.welcome_message`
 is fixed when the APK is built. With it, the same resource id is looked up by its name (`welcome_message`) in a JSON
@@ -31,7 +31,7 @@ review.
 - **Two UI toolkits, one SDK.** The `core` artifact serves Android Views, the `compose` artifact adds Jetpack Compose
   helpers and includes `core`.
 
-## How does a translation get from Tolgee to the screen?
+## Follow a translation to the screen
 
 The flow has four stops, and each has its own page in these docs.
 
@@ -45,7 +45,7 @@ The flow has four stops, and each has its own page in these docs.
 4. **UI code reads strings as before.** In Views, a context wrapper routes `getString` and layout inflation through
    Tolgee. In Compose, three imports from `io.tolgee` replace the `androidx.compose.ui.res` helpers.
 
-## Which artifact do I need?
+## Choose your artifact
 
 | Your UI | Artifact | Start here |
 |---|---|---|
@@ -56,7 +56,7 @@ The flow has four stops, and each has its own page in these docs.
 The Gradle plugin published under the same group configures a compiler plugin that is not released yet. Do not add
 it to an app.
 
-## What are the requirements?
+## Check the requirements
 
 - Android API level 21 or newer.
 - Kotlin. The examples use the Gradle Kotlin DSL; the Groovy DSL works with the same coordinates.
@@ -66,7 +66,7 @@ it to an app.
   [Maven Central](https://central.sonatype.com/search?namespace=io.tolgee.mobile-kotlin-sdk). The SDK is pre-1.0 and
   the API can change between releases.
 
-## Where can I see a working app?
+## Run a working app
 
 Two starter apps in the SDK repository show the complete integration in about ten files each and are built on every
 commit. Every code block in these docs is a file from one of them.

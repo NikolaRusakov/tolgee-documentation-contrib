@@ -78,10 +78,12 @@ function check(file) {
   const total = words(prose(body));
   ok('800+ words (or deliberate stub)', total >= 800, `${total} words${total < 800 ? ' (stub?)' : ''}`);
 
-  // 4. question H2s
+  // 4. actionable H2s: imperative, no trailing "?", at most 8 words (client convention)
   const h2s = [...body.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
-  const questions = h2s.filter((h) => /\?$/.test(h));
-  ok('H2s phrased as questions (>= half)', h2s.length > 0 && questions.length * 2 >= h2s.length - 2, `${questions.length}/${h2s.length}`);
+  const nonActionable = h2s.filter(
+    (h) => /\?$/.test(h) || h.split(/\s+/).length > 8 || /^(how|what|why|which|when|where|can|do|does|is|are)\b/i.test(h)
+  );
+  ok('H2s are actionable (no "?", <= 8 words)', nonActionable.length === 0, nonActionable.slice(0, 2).join(' | '));
 
   // 5. no TODO / WIP / FIXME / commented notes
   ok('no TODO/WIP/FIXME/comments', !/TODO|FIXME|\bWIP\b|\{\/\*|<!--/.test(body), '');

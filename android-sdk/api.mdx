@@ -12,14 +12,14 @@ page. This page is the map for developers who need to find a class or member qui
 lists what exists in the `core` and `compose` modules with abbreviated signatures and links into the generated
 reference. The source of truth is that reference and the binary API dumps of the release you use.
 
-## How do I read this page?
+## Read this page
 
 Each table below lists the members of one type with an abbreviated signature and one line on what it does. Use it to
 find the name; then open the type's Markdown page in the generated reference for the full signature, the KDoc and the
 platforms the member exists on. Members marked common exist in the Kotlin Multiplatform core; members marked Android
 exist only in the Android source set, which is what `Tolgee.instance` is on Android.
 
-## Where does the full reference live?
+## Find the full reference
 
 | Resource | URL |
 |---|---|
@@ -43,7 +43,7 @@ Examples: [`Tolgee`](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/
 [compose helpers](https://tolgee.github.io/tolgee-mobile-kotlin-sdk/markdown/compose/-compose/io.tolgee/index.md).
 If a link 404s, resolve the page through `llms.txt` instead of guessing.
 
-## How do I create an instance for tests?
+## Create an instance for tests
 
 `Tolgee.new { }` builds an independent instance without touching the singleton, which is how tests and dependency
 injection get a `Tolgee` with a fixture HTTP client:
@@ -56,7 +56,7 @@ val tolgee = Tolgee.new {
 }
 ```
 
-## What is in the core module?
+## Explore the core module
 
 The `core` artifact (`io.tolgee.mobile-kotlin-sdk:core`) holds the multiplatform `Tolgee` class, its configuration
 builders, the Android overloads that take resource ids, the context wrapper and the storage provider.
@@ -117,14 +117,14 @@ builders, the Android overloads that take resource ids, the context wrapper and 
 | `TolgeeStorageProvider` | Interface `get(name): ByteArray?` / `put(name, data)` for persistent caching. |
 | `TolgeeStorageProviderAndroid(context, versionCode, path = "tolgee/localization-cache")` | File cache under `filesDir`, keyed by version code. |
 
-## What is in the compose module?
+## Explore the compose module
 
 The `compose` artifact (`io.tolgee.mobile-kotlin-sdk:compose`) depends on `core` and adds `stringResource`,
 `pluralStringResource` and `stringArrayResource` in package `io.tolgee`, with overloads for Android resource ids and for
 Compose Multiplatform `Res` objects, plus `Locale` helpers. Every overload is listed on
 [API for Jetpack Compose](/android-sdk/integrations/jetpack-compose/api).
 
-## What about the gradle-plugin module?
+## Skip the gradle-plugin module
 
 Published as `io.tolgee.mobile-kotlin-sdk:gradle-plugin`, but the compiler plugin it configures is disabled in the
 current release; do not add it to consumer builds.

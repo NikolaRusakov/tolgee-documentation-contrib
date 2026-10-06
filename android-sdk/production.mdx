@@ -12,13 +12,13 @@ cached on the device and the bundled resources remain the fallback. This page is
 release with Tolgee Android SDK. It covers one Content Delivery URL per environment, how the cache is invalidated, what
 the user sees offline, the formatter choice, network security, and how to test without a CDN.
 
-## How do I separate environments?
+## Separate environments
 
 Create one Content Delivery per environment in the Tolgee Platform and inject the URL prefix at build time through
 `BuildConfig`, as shown in the [Content Delivery guide](/android-sdk/content-delivery). Nothing in the source code
 then names an environment, and a release build cannot accidentally read the staging translations.
 
-## How is the cache invalidated?
+## Invalidate the cache per release
 
 `TolgeeStorageProviderAndroid(context, BuildConfig.VERSION_CODE)` writes the downloaded JSON under `filesDir`, keyed by
 the version code. A new version code starts with an empty cache, so strings added in the new release are never served
@@ -33,7 +33,7 @@ Tolgee.init {
 }
 ```
 
-## What does the user see offline?
+## Check offline behavior
 
 1. The last cached translations for the resolved language, if a previous run downloaded them.
 2. Otherwise the bundled Android resource for the device configuration.
@@ -42,27 +42,27 @@ The first frame after a cold start always shows the bundled or cached text; the 
 same screen. Keep `values-xx/strings.xml` in the app and run `tolgee pull` before a release if the bundled fallbacks
 should match the platform.
 
-## Which formatter should I use?
+## Choose a formatter
 
 `Tolgee.Formatter.Sprintf`, the default, formats Android placeholders (`%1$s`, `%d`) and is what a Content Delivery in
 the "Android SDK" format publishes. Switch to `Tolgee.Formatter.ICU` only if the delivery exports ICU messages with
 named parameters; then `TolgeeMessageParams.Mapped` works and positional arguments still do. Mixing them shows
 placeholders literally. The [Formatting](/android-sdk/formatting) page compares the two.
 
-## What about network security?
+## Restrict network security
 
 List only the hosts the app needs in `res/xml/network_security.xml`: `tolgee.io` and `tolg.ee` for Tolgee Cloud, or
 your own host for a self-hosted CDN. The Content Delivery URL is public; Tolgee API keys are used by the Tolgee CLI in
 CI and never enter the APK. For a self-hosted setup make sure the CDN serves HTTPS; see
 [self-hosting](/platform/self_hosting/getting_started).
 
-## How do I keep startup fast?
+## Keep startup fast
 
 `preload(activity)` in `onStart` of the entry Activity fetches the current language, cache first. It does not block
 the first frame. `preloadAll` warms every published language and is worth it only for apps with a language switch on
 the first screen. Do not resolve strings before `Application.onCreate()` completes.
 
-## How do I test an app that uses Tolgee Android SDK?
+## Test an app that uses Tolgee
 
 - **Unit tests and previews** run without `Tolgee.init`, so every API returns the bundled resource and existing
   expectations stay valid.
@@ -71,7 +71,7 @@ the first screen. Do not resolve strings before `Application.onCreate()` complet
 - **Manual release check**: change one translation in the platform, publish, cold-start the release build, and confirm
   the new text; then enable airplane mode on a fresh install and confirm the bundled text with no error.
 
-## What should the release checklist contain?
+## Run the release checklist
 
 1. `tolgee push` has run so every key in `strings.xml` exists on the platform, and the Content Delivery for production
    is published for every language the app lists in `availableLocaleTags`.
@@ -80,7 +80,7 @@ the first screen. Do not resolve strings before `Application.onCreate()` complet
 4. `network_security.xml` lists only the hosts the app talks to.
 5. One manual run of the release build online, then one on a fresh install in airplane mode.
 
-## How do I roll back a bad translation?
+## Roll back a bad translation
 
 Fix the text in the Tolgee Platform and publish the Content Delivery again. Devices that fetch after the CDN edge
 refreshes, within about fifteen minutes, receive the corrected file, and nothing has to be released. A whole language

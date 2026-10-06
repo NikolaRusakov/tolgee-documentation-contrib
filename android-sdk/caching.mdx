@@ -12,7 +12,7 @@ when the network fails, and the bundled Android resources when both are empty. T
 know what the user sees at each moment, how to warm the cache with `preload` and `preloadAll`, how many languages stay
 in memory, and how to provide persistent storage on a platform where Tolgee Android SDK ships none.
 
-## When does Tolgee Android SDK load a language?
+## Know when a language loads
 
 Loading is lazy. Nothing is fetched in `Tolgee.init`. The first of these triggers a load of the resolved language:
 
@@ -23,7 +23,7 @@ Loading is lazy. Nothing is fetched in `Tolgee.init`. The first of these trigger
 `t(...)` and the wrapped `getString` never load: they answer from memory or fall back. That is why a screen that reads
 strings imperatively calls `preload`, and a Compose screen does not have to.
 
-## What is the load sequence?
+## Follow the load sequence
 
 1. **Manifest** (optional): `manifest.json` from the Content Delivery, once per process. A failure disables fallback
    unless `availableLocaleTags` is configured (see [Language and fallback](/android-sdk/language)).
@@ -38,7 +38,7 @@ Loading of one language is serialised with a mutex, so concurrent `tFlow` collec
 A parse failure of a CDN response, for example XML from a delivery in the wrong format, counts as a failure and the
 cache is consulted; it is never overwritten with unparsable data.
 
-## What does the user see, and when?
+## Check what the user sees
 
 | Moment | Text shown |
 |---|---|
@@ -48,7 +48,7 @@ cache is consulted; it is never overwritten with unparsable data.
 | Offline, fresh install | Bundled resource, no error |
 | After `setLocale` | Cached or bundled text for the new language until its load completes |
 
-## How do preload and preloadAll differ?
+## Choose between preload and preloadAll
 
 `preload()` loads the manifest and the resolved current language. `preloadAll()` loads every published language, the
 current one **last** so it survives the in-memory limit, and ignores individual failures. On Android both have
@@ -62,7 +62,7 @@ override fun onStart() {
 }
 ```
 
-## How many languages stay in memory?
+## Limit languages kept in memory
 
 `maxLocalesInMemory` in `contentDelivery { }` sizes an LRU cache of parsed languages. The default is **1**: a language
 switch evicts the previous language from memory, though it stays in persistent storage. Set it to the number of
@@ -74,7 +74,7 @@ contentDelivery {
 }
 ```
 
-## How does persistent storage work?
+## Set up persistent storage
 
 `TolgeeStorageProvider` is a two-method interface, `put(name, bytes)` and `get(name)`, keyed by the CDN path. On
 Android, `TolgeeStorageProviderAndroid(context, versionCode)` stores files under
@@ -96,7 +96,7 @@ class FileStorageProvider(private val dir: File) : TolgeeStorageProvider {
 }
 ```
 
-## How do I control the network layer?
+## Configure the network layer
 
 `network { }` in `Tolgee.init` accepts a Ktor `HttpClient`, an engine, or a configuration block, and a
 `CoroutineContext` for requests. Use it for a custom timeout, a proxy, certificate pinning, or a fixture client in
@@ -113,7 +113,7 @@ Tolgee.init {
 }
 ```
 
-## How fresh is the data?
+## Check how fresh the data is
 
 Every successful CDN fetch replaces the stored copy, and the SDK fetches on every load, so a device that opens the app
 is at most one CDN edge cache period behind the platform: about fifteen minutes after publishing. There is no

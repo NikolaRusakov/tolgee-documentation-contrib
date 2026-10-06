@@ -16,7 +16,7 @@ this page. The result is a screen where every string follows the language and th
 
 <StarterBanner starter="android-views" label="Android Views" />
 
-## How do I read a static translation in an Activity?
+## Read a static translation in an Activity
 
 Nothing changes. With the context wrapped as described in
 [Installation](/android-sdk/integrations/android-views/installation), layout attributes are translated during
@@ -35,7 +35,7 @@ val text = getString(R.string.description) // resolved through Tolgee, falls bac
 Tolgee Android SDK looks the key up by the resource entry name: `R.string.description` becomes the key `description`.
 Keep the names in the Tolgee project identical to the names in `strings.xml`, which the Tolgee CLI push does for you.
 
-## How do I pass parameters to a translation?
+## Pass parameters to a translation
 
 Pass the arguments exactly as to `getString`. Tolgee Android SDK formats with the Sprintf formatter by default, so
 `%1$s`, `%2$d` and `%.2f` placeholders in the Tolgee text work like in Android resources.
@@ -51,7 +51,7 @@ binding.textParameterized.text = getString(R.string.percentage_placeholder, prog
 Because the layout inflater cannot know the arguments, it leaves strings with placeholders untouched during inflation.
 Always set them from code, and see the `Flow` section below for keeping them current.
 
-## How do I translate plurals?
+## Translate plurals
 
 Use `getQuantityString` with the quantity, then the format arguments. Android convention repeats the quantity as the
 first argument so the text can print it, and Tolgee Android SDK follows the same convention: the quantity selects the
@@ -70,7 +70,7 @@ val text = resources.getQuantityString(R.plurals.plr_test_placeholder_2, passed,
 
 Only one plural per string is supported, matching Android resources. Nested plurals inside one string are not.
 
-## How do I translate a string array?
+## Translate a string array
 
 `getStringArray` returns the array from the Content Delivery, or the bundled array as fallback.
 
@@ -79,7 +79,7 @@ val items = resources.getStringArray(R.array.array_test)
 binding.textArray.text = items.joinToString(", ")
 ```
 
-## How do I keep a TextView in sync when translations change?
+## Keep a TextView in sync
 
 Translations arrive asynchronously and change on a language switch. `retranslate` in the base Activity re-applies
 inflated layouts, but text you set from code with arguments has to be set again. `tFlow` is the SDK's answer: a
@@ -150,7 +150,7 @@ private fun render(state: UiState) {
 }
 ```
 
-## How do I translate a Toast, a dialog or a menu?
+## Translate a Toast, dialog or menu
 
 Anything that takes the Activity as its context, or a view from the Activity, goes through the wrapped context and
 needs no change: `Toast.makeText(this, R.string.saved, LENGTH_SHORT)`, `AlertDialog.Builder(this).setTitle(R.string.confirm)`,
@@ -159,7 +159,7 @@ is inflated; call `invalidateOptionsMenu()` from `onTranslationsChanged()` if th
 open. The toolbar title set from the manifest label is rendered by the system and does not follow the language; set
 it from code with `title = getString(R.string.app_name)` in the same hook.
 
-## How do I read a string outside an Activity?
+## Read a string outside an Activity
 
 Application context, `Service`, `BroadcastReceiver`, WorkManager workers and notification builders do not go through
 the wrapped Activity context. Use the extension functions from `io.tolgee.common`, or the explicit instance. Both fall
@@ -183,7 +183,7 @@ val items = tolgee.tArray(context.resources, R.array.options)
 Do not resolve strings before `Application.onCreate()` has finished; there is no Tolgee instance yet and the bundled
 text is returned.
 
-## How do I use translations in a ViewModel?
+## Use translations in a ViewModel
 
 Keep the **inputs** to strings in UI state (numbers, names), never resolved strings and never a `Context`. The
 Activity resolves them with the helpers above, so a language change re-renders text without the ViewModel knowing.

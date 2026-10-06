@@ -16,7 +16,7 @@ Prerequisite: Tolgee Android SDK is installed and initialized, following the
 [Android Views](/android-sdk/integrations/android-views/installation) or
 [Jetpack Compose](/android-sdk/integrations/jetpack-compose/installation) installation guide.
 
-## How does Tolgee Android SDK resolve a string?
+## Understand how a string is resolved
 
 - A translation is looked up by **key = resource entry name** (`R.string.welcome_message` → `welcome_message`), so no
   key mapping table is needed. Keep resource names unchanged.
@@ -30,7 +30,7 @@ Prerequisite: Tolgee Android SDK is installed and initialized, following the
 - **Not supported over the air**: namespaced keys, more than one plural inside a single string, the app label and
   other strings rendered by the OS from the manifest, and strings consumed before `Application.onCreate()` finished.
 
-## How do I find every string lookup in the app?
+## Find every string lookup
 
 Run the whole block from the repository root and save the output; each pattern maps to one step below.
 
@@ -51,7 +51,7 @@ grep -n 'android:label' app/src/main/AndroidManifest.xml
 grep -rn 'translatable="false"' app/src/main/res/values/strings.xml
 ```
 
-## What do I change for each pattern?
+## Change each lookup pattern
 
 ### 1. Sync keys with the Tolgee project
 
@@ -191,7 +191,7 @@ For `Activity` titles set from the manifest label, update them from code: `setTi
 - Do not delete `values-xx/` folders; they are the offline fallback and the default text before the CDN answers.
 - Run `tolgee pull` before releases if you want the bundled fallbacks to match the platform.
 
-## How do I verify the migration?
+## Verify the migration
 
 1. Re-run the **Detect** block. Pattern **D** must return nothing; patterns **A**, **B** and **C** may remain only in
    Activities/Fragments (wrapped) or as documented exceptions; pattern **E** hits must use `getStringT`/`t(...)`.
@@ -204,7 +204,7 @@ For `Activity` titles set from the manifest label, update them from code: `setTi
 
 Done means: the four checks above pass and the exception list from step 6 is written down.
 
-## What can go wrong?
+## Fix common problems
 
 | Symptom | Cause | Fix |
 |---|---|---|

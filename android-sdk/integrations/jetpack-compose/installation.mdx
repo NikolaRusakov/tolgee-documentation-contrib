@@ -21,11 +21,11 @@ when offline.
 
 <StarterBanner starter="jetpack-compose" label="Jetpack Compose" />
 
-## What do I need before I start?
+## Prepare before you start
 
 <CdnPrerequisite />
 
-## How do I add the Tolgee dependency?
+## Add the Tolgee dependency
 
 For Compose you need the `compose` artifact from the group `io.tolgee.mobile-kotlin-sdk`; it already contains `core`.
 Take the version from
@@ -56,11 +56,11 @@ dependencies {
 Compose Multiplatform: add the same library to the `commonMain` dependencies of the shared module. Sync the project;
 the build should stay green.
 
-## How do I allow the Tolgee CDN in the network security config?
+## Allow the Tolgee CDN in network config
 
 <NetworkSecurityConfig />
 
-## How do I initialize Tolgee in the Application class?
+## Initialize Tolgee in the Application class
 
 <TolgeeInit />
 
@@ -68,7 +68,7 @@ Never call `Tolgee.init` inside a composable. In a Compose Multiplatform project
 `commonMain` and call it from each platform entry point; `TolgeeStorageProviderAndroid` is Android-only, so provide a
 `TolgeeStorageProvider` implementation per platform if you want a persistent cache there.
 
-## How do I make composables read strings from Tolgee?
+## Read strings in composables
 
 Replace three imports. The Tolgee helpers have the same signatures as the Compose originals, so no call site changes.
 
@@ -102,7 +102,7 @@ the fallback and the composable recomposes when the cache or the CDN answers. Wh
 `@Preview` functions and unit tests, the helper returns the plain Compose resource. Compose Multiplatform uses the same
 functions with `Res.string.description` and `Res.plurals.plr_test_placeholder_2`.
 
-## How do I verify the installation?
+## Verify the installation
 
 1. Build the app:
 
@@ -122,7 +122,7 @@ functions with `Res.string.description` and `Res.plurals.plr_test_placeholder_2`
 Done means: the build is green, one string visibly came from the CDN, a language switch recomposed the screen, and
 previews are unaffected.
 
-## How do I add a new string after the installation?
+## Add a new string
 
 Add it to `res/values/strings.xml` first, because the resource id is what the composable references and what the
 fallback shows. Push it with `tolgee push`, translate it in the Tolgee Platform, and the Content Delivery publishes it.
@@ -130,7 +130,7 @@ The composable that reads the string recomposes with the translation the next ti
 shows the bundled text until then. No code beyond the `stringResource` call changes, and no release is needed for the
 translated versions to reach users.
 
-## How does the Tolgee helper differ from the Compose original?
+## Compare the helper with the Compose original
 
 `androidx.compose.ui.res.stringResource` reads the resource once from the current configuration and never changes
 until the Activity is recreated. `io.tolgee.stringResource` returns the same value on the first frame, then collects
@@ -138,14 +138,14 @@ until the Activity is recreated. `io.tolgee.stringResource` returns the same val
 published change. The two functions have identical signatures, which is why the migration is an import change, and
 the Tolgee version delegates to the original when no `Tolgee` instance exists.
 
-## What can go wrong?
+## Fix common problems
 
 Text never changes from the bundled value: `Tolgee.init` is missing or ran after the first composition, or the Content
 Delivery prefix is wrong. `Unresolved reference: stringResource`: the old import was removed but the Tolgee import not
 added. A plural shows the wrong form: the count was passed only as a format argument, not as `quantity`. The
 [troubleshooting page](/android-sdk/troubleshooting) has the fix for each.
 
-## How do I prepare for production?
+## Prepare for production
 
 <PreparingForProduction />
 

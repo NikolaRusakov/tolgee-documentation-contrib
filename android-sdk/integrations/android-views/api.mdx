@@ -13,7 +13,7 @@ for developers writing Views code: the instance methods, the context wrapper, th
 are not wrapped, and the storage provider. Signatures are abbreviated; the generated reference linked at the end has
 the full KDoc.
 
-## What does TolgeeAndroid add to the instance?
+## Use what TolgeeAndroid adds
 
 All members take an Android resource id and fall back to the bundled resource when the key is missing or nothing is
 loaded. The key is the resource entry name (`R.string.welcome` → `welcome`).
@@ -40,7 +40,7 @@ lifecycleScope.launch {
 }
 ```
 
-## What does TolgeeContextWrapper intercept?
+## Check what TolgeeContextWrapper intercepts
 
 `TolgeeContextWrapper.wrap(base)` returns a `ContextWrapper` whose `Resources` override `getString`, `getText`,
 `getQuantityString`, `getQuantityText`, `getStringArray` and `getTextArray`, and whose `LayoutInflater` translates
@@ -59,7 +59,7 @@ override fun attachBaseContext(newBase: Context?) {
 }
 ```
 
-## Which extension functions work with any context?
+## Use extensions on any context
 
 Package `io.tolgee.common`, for code that does not run against a wrapped context (Application context, services,
 workers, ViewModels holding `Application`):
@@ -73,14 +73,14 @@ workers, ViewModels holding `Application`):
 
 Overloads without a `tolgee` parameter use `Tolgee.instanceOrNull` and return the plain resource when it is `null`.
 
-## What does TolgeeStorageProviderAndroid do?
+## Use TolgeeStorageProviderAndroid
 
 `TolgeeStorageProviderAndroid(context, versionCode, path = "tolgee/localization-cache")` implements
 `TolgeeStorageProvider` with one file per CDN path under `filesDir/<path>/<versionCode>/`. A new version code starts
 with an empty directory. Nothing is set by default; pass it as `storage` in `contentDelivery { }`. Details in
 [Loading and caching](/android-sdk/caching).
 
-## How do I get the ChangeListener callback form?
+## Listen with ChangeListener
 
 `Tolgee.ChangeListener` has one method, `onTranslationsChanged()`, called on the main thread after each load.
 `addChangeListener` and `removeChangeListener` on the instance register it, for Java code or classes without a

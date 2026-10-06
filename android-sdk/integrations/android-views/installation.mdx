@@ -20,11 +20,11 @@ Tolgee CDN at runtime and falls back to the bundled Android resources when offli
 
 <StarterBanner starter="android-views" label="Android Views" />
 
-## What do I need before I start?
+## Prepare before you start
 
 <CdnPrerequisite />
 
-## How do I add the Tolgee dependency?
+## Add the Tolgee dependency
 
 Tolgee Android SDK is published on Maven Central under the group `io.tolgee.mobile-kotlin-sdk`. For Views you need the
 `core` artifact. Add it to the version catalog and to the app module. Take the version from
@@ -55,15 +55,15 @@ Without a version catalog the dependency line is `implementation("io.tolgee.mobi
 `mavenCentral()` is in the repositories of every default Android project; if you removed it, add it back to
 `dependencyResolutionManagement` in `settings.gradle.kts`. Sync the project; the build should stay green.
 
-## How do I allow the Tolgee CDN in the network security config?
+## Allow the Tolgee CDN in network config
 
 <NetworkSecurityConfig />
 
-## How do I initialize Tolgee in the Application class?
+## Initialize Tolgee in the Application class
 
 <TolgeeInit />
 
-## How do I make getString and XML layouts use Tolgee?
+## Route getString and layouts through Tolgee
 
 Android resolves `getString(R.string.key)` through the Activity's `Resources`, and inflates layouts through its
 `LayoutInflater`. `TolgeeContextWrapper` replaces both. Override `attachBaseContext` in every Activity, or once in a
@@ -87,7 +87,7 @@ From now on `getString`, `getText`, `getQuantityString`, `getStringArray` and th
 resource otherwise. If `Tolgee.init` has not run yet, `wrap` returns a plain wrapper and nothing changes, which keeps
 unit tests and previews working.
 
-## How do I load translations and react to changes?
+## Load translations and react to changes
 
 Translations arrive asynchronously: the cache answers first, then the CDN. Two additions to the base class make every
 screen show the newest text. `preload` fetches the current language when the screen starts. `changeFlow` emits after
@@ -134,7 +134,7 @@ Text that you set from code with arguments, such as `getString(R.string.progress
 `retranslate`. The [Translating](/android-sdk/integrations/android-views/translating) page shows the `Flow` helpers
 that keep such text current.
 
-## How do I verify the installation?
+## Verify the installation
 
 1. Build the app:
 
@@ -157,7 +157,7 @@ that keep such text current.
 Done means: the build is green, one string visibly came from the CDN, and a language switch re-rendered the screen
 without a crash.
 
-## How do I add a new string after the installation?
+## Add a new string
 
 The loop is the same for every new string. Add it to `res/values/strings.xml` first, because the resource id is what
 your code and the fallback use. Push it with `tolgee push`, translate it in the Tolgee Platform or let machine
@@ -165,14 +165,14 @@ translation do it, and the Content Delivery publishes it. The next `preload` on 
 bundled English text covers the seconds in between. Nothing in the Application class changes, and no release is needed
 for the translated versions to reach users.
 
-## What can go wrong?
+## Fix common problems
 
 Only bundled text is shown: `Tolgee.init` ran after the first Activity was created, or the Content Delivery prefix is
 wrong. A `CLEARTEXT communication not permitted` error: the host is missing from `network_security.xml`. Text in
 layouts translates but text set from code does not: that code runs against a context that is not wrapped. The
 [troubleshooting page](/android-sdk/troubleshooting) has the fix for each.
 
-## How do I prepare for production?
+## Prepare for production
 
 <PreparingForProduction />
 

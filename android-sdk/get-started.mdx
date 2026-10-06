@@ -12,7 +12,7 @@ Content Delivery read by Tolgee Android SDK. This page is for anyone starting an
 points you at the guide for your UI toolkit, and lists what to prepare in the Tolgee Platform before you change any
 code.
 
-## Do you need over-the-air updates?
+## Decide on over-the-air updates
 
 This is the first decision, because it decides whether you add Tolgee Android SDK at all. **Bundled** translations
 ship inside the APK: the Tolgee CLI writes them into `res/values-xx/strings.xml` and a corrected text needs a new
@@ -40,7 +40,7 @@ tolgee pull   # write the translations back before a release
 The [Tolgee CLI push and pull](/tolgee-cli/push-pull-strings) page covers the configuration. Everything below covers
 the over-the-air column.
 
-## Which guide should I follow?
+## Choose your guide
 
 | Your app | Open this guide |
 |---|---|
@@ -50,7 +50,7 @@ the over-the-air column.
 | An existing app with hundreds of `getString` calls | Install first, then [migrate the existing app](/android-sdk/migrate-existing-app) pattern by pattern |
 | Compose Multiplatform | The Compose guide; the Multiplatform notes are marked in it |
 
-## What do I need from the Tolgee Platform first?
+## Prepare the Tolgee Platform first
 
 Every guide starts from the same three things. Prepare them once per project in the Tolgee Platform; the
 [Content Delivery guide](/android-sdk/content-delivery) explains each in detail.
@@ -63,7 +63,7 @@ Every guide starts from the same three things. Prepare them once per project in 
    Tolgee Android SDK reads JSON only; a delivery in another format produces an app that silently shows bundled text.
 3. **The URL prefix and the list of published languages.** Both go into `Tolgee.init` in the Application class.
 
-## How long does it take?
+## Plan your time
 
 With the three items above ready, the installation guides take about fifteen minutes each. The two
 [starter apps](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters) go from clone to a

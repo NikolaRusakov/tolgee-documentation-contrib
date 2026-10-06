@@ -13,14 +13,14 @@ strings in `composeResources`, push them to Tolgee in the `COMPOSE_XML` format, 
 helpers with `Res.string` objects. This page is for anyone taking the Android integration to a shared Compose UI; it
 lists the steps and the three things that differ from a plain Android app.
 
-## Which platforms are supported?
+## Check supported platforms
 
 The `compose` artifact publishes `androidTarget`, `jvm`, `iosX64`, `iosArm64`, `iosSimulatorArm64`, `macosX64`,
 `macosArm64`, `js` and `wasmJs`. The `core` artifact it depends on targets more (tvOS, watchOS, Linux, Windows,
 Android Native) for non-Compose use. Resource-id overloads, `TolgeeContextWrapper` and `retranslate` exist on Android
 only; everything below is common code.
 
-## How do I add the dependency?
+## Add the dependency
 
 ```toml title="gradle/libs.versions.toml"
 [versions]
@@ -45,7 +45,7 @@ compose.resources {
 }
 ```
 
-## How do I get the strings into Tolgee?
+## Push strings to Tolgee
 
 Compose Multiplatform keeps strings in `composeResources/values*/strings.xml` and generates `Res.string.<name>`
 objects. Tolgee Android SDK looks a resource up by that name, so push the files in the `COMPOSE_XML` format and the
@@ -71,7 +71,7 @@ Create the Content Delivery in the **Android SDK** format, as for Android; it pu
 files with Android placeholders. The [Content Delivery guide](/android-sdk/content-delivery) covers the format rule and
 the curl check.
 
-## How do I initialize Tolgee?
+## Initialize Tolgee
 
 Put the configuration in one common function and call it from each platform entry point before the first composition:
 `Application.onCreate()` on Android, `main()` on desktop, the app delegate or the SwiftUI `App` initializer on iOS.
@@ -109,7 +109,7 @@ class MyApplication : Application() {
 }
 ```
 
-## How do I read translations in shared composables?
+## Read translations in shared composables
 
 The same three imports as on Android, with `Res` objects instead of `R` ids:
 
@@ -137,12 +137,12 @@ fun App() {
 The helpers recompose when the language changes and fall back to the Compose resource when Tolgee is not initialized,
 so previews and tests behave as before.
 
-## What differs from a plain Android app?
+## Note the differences from Android
 
 1. **No persistent cache is provided outside Android.** `storage` is `null` on every platform unless you set it, so
    desktop, iOS and web re-download on every start and show bundled text offline. Implement the two-method
    `TolgeeStorageProvider` interface per platform; the JVM example is in
-   [Loading and caching](/android-sdk/caching#how-does-persistent-storage-work). Android keeps
+   [Loading and caching](/android-sdk/caching#set-up-persistent-storage). Android keeps
    `TolgeeStorageProviderAndroid`.
 2. **No context wrapper, no `retranslate`.** Those work on Android `Resources` and `LayoutInflater`. In shared code
    every string goes through the composables or `tFlow`, which is what a Compose UI does anyway.
@@ -150,7 +150,7 @@ so previews and tests behave as before.
    permission from the [installation guide](/android-sdk/integrations/jetpack-compose/installation); desktop and iOS
    need nothing; a browser target needs the CDN to answer with CORS headers, which the Tolgee CDN does.
 
-## How do I switch and observe the language in shared code?
+## Switch and observe the language
 
 `setLocale` accepts a language tag or a Compose `Locale`, and the helpers recompose on their own. To show the active
 language, map `changeFlow` to `getLocale()` and collect it as state; the same code runs on every target.
@@ -171,7 +171,7 @@ fun LanguageMenu() {
 The language is not persisted by the SDK; store the tag with your platform's settings mechanism and pass it to
 `locale(tag)` in `TolgeeSetup.init` on the next start.
 
-## How do I verify it?
+## Verify the setup
 
 1. `./gradlew :composeApp:run` (desktop) shows the bundled text, then the translation from the Content Delivery.
 2. Tap the language button: every text rendered through the helpers recomposes.

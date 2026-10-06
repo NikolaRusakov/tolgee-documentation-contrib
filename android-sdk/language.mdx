@@ -13,7 +13,7 @@ is matched against the published languages, progressively shortened until one ma
 device shows the wrong one. It explains the resolution rules, where the list of published languages comes from, and what
 happens for a key that is missing in the resolved language.
 
-## Which language does Tolgee Android SDK use at start?
+## Check the starting language
 
 The device locale, `Tolgee.systemLocale`, unless `Tolgee.init` sets one with `locale("cs")`. The value is kept in a
 locale flow; `getLocale()` returns it, and `setLocale(tag)` or `setLocale(locale)` replaces it at runtime. Tolgee
@@ -29,7 +29,7 @@ Tolgee.init {
 }
 ```
 
-## How does fallback work?
+## Understand language fallback
 
 Given a requested locale and the list of published languages, Tolgee Android SDK tries candidates in this order and
 stops at the first that is published:
@@ -50,7 +50,7 @@ device resolves to the published `en-US.json`. Examples:
 | `sr-Cyrl` | `sr` | `sr` |
 | `de` | `en`, `cs` without `defaultLanguage` | nothing loads; every key falls back to the bundled resource |
 
-## Where does the list of published languages come from?
+## Set the list of published languages
 
 Fallback needs a list to match against. Tolgee Android SDK takes it from, in order:
 
@@ -66,14 +66,14 @@ installation guide lists the published languages in `availableLocaleTags`.
 `Tolgee.instance.availableLocales` and `availableLocaleTags` return that list once it is known, and `null` before the
 first `preload` when it comes from the manifest.
 
-## What happens for a key that is missing?
+## Handle a missing key
 
 Resolution above chooses the *file* to load. Inside the file, a key that does not exist yields no translation, and
 every Android API returns the bundled resource for the device configuration: `getString` through the wrapper, `t(context,
 id)`, the Compose helpers. The key-based `t(key)` returns `null` instead, and `tFlow(key)` emits nothing for it. Keep
 `values-xx/strings.xml` folders in the app so the fallback text is in the right language.
 
-## How do I react to a language change?
+## React to a language change
 
 `setLocale` only updates the locale flow. Anything collecting `tFlow`, and every Compose helper, reloads on its own.
 Imperative Views code calls `preload(activity)` afterwards and updates when `changeFlow` emits; the base Activity in
@@ -83,7 +83,7 @@ the callback form for Java code; it runs on the main thread.
 In Compose, `setLocale` also accepts a `androidx.compose.ui.text.intl.Locale`, and `Tolgee.Config.Builder.locale`
 has the same overload.
 
-## How do I read or list languages at runtime?
+## Read and list languages at runtime
 
 `getLocale()` returns the requested locale, not the resolved one: a device on `en-US` with `en` published reports
 `en-US` while the `en` file is loaded. `availableLocaleTags` lists what can be loaded; build a language menu from it
@@ -95,7 +95,7 @@ val tags = Tolgee.instance.availableLocaleTags ?: emptyList()   // null before t
 val active = Tolgee.instance.getLocale().toTag("-")
 ```
 
-## How do I add a language later?
+## Add a language later
 
 Publish it in the Content Delivery and add it to `availableLocaleTags`, or switch to a `manifest.json` on a custom CDN
 so the list is not hard-coded. The bundled fallback for a new language is the default `values/strings.xml` until you

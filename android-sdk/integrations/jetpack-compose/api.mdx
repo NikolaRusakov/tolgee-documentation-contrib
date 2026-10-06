@@ -12,7 +12,7 @@ package `io.tolgee`, and depends on `core`. This page lists every overload for d
 Android variants that take resource ids, the Compose Multiplatform variants that take `StringResource` objects, the
 explicit-instance forms, and what each returns before the translation has loaded.
 
-## What do the composables do?
+## Use the composables
 
 Each composable collects `tFlow` (or `tArrayFlow`) for the key as state, with the platform resource as the initial
 value. The first frame therefore shows the bundled text and the composable recomposes when the cache or the CDN
@@ -39,7 +39,7 @@ Text(stringArrayResource(R.array.array_test).joinToString())
 Text(stringResource(myTolgee, R.string.description)) // explicit instance
 ```
 
-## How do the Compose Multiplatform overloads find the key?
+## Resolve keys in Multiplatform overloads
 
 They read `resource.key`, the resource name generated into `Res.string.description`, and look it up exactly like the
 Android entry name. Push the `composeResources/values*/strings.xml` files with the Tolgee CLI in the `COMPOSE_XML`
@@ -50,7 +50,7 @@ Text(stringResource(Res.string.description))
 Text(pluralStringResource(Res.plurals.plr_test_placeholder_2, 2, 10, "Plurals"))
 ```
 
-## Which locale helpers exist?
+## Use the locale helpers
 
 Two extension functions accept the Compose `androidx.compose.ui.text.intl.Locale` so Compose code does not have to
 convert to a language tag:
@@ -63,7 +63,7 @@ convert to a language tag:
 `setLocale(tag)`, `getLocale()`, `changeFlow` and `tFlow` are inherited from the common `Tolgee` class; see the
 [API reference](/android-sdk/api).
 
-## How do I observe the language in a composable?
+## Observe the language in a composable
 
 `changeFlow` mapped to `getLocale()` and collected as state gives a value that recomposes on every language change:
 

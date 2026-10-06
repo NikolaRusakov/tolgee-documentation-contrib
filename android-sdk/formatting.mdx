@@ -13,7 +13,7 @@ understands Android and Java placeholders such as `%1$s` and `%d`; **ICU** under
 a placeholder that renders literally. It covers which Content Delivery format each formatter needs, how arguments,
 plurals and arrays work in each mode, and what cannot be mixed.
 
-## Which formatter should I use?
+## Choose a formatter
 
 Use the formatter that matches the text your Content Delivery publishes. The formatter does not convert between
 syntaxes; a mismatch shows placeholders literally.
@@ -40,7 +40,7 @@ Tolgee.init {
 }
 ```
 
-## How do arguments work with Sprintf?
+## Pass arguments with Sprintf
 
 Arguments are passed exactly as to `getString(id, args)`: by position. The Android overloads wrap them in
 `TolgeeMessageParams.Indexed`, and the common `t(key, params)` accepts the same type directly.
@@ -60,7 +60,7 @@ The conversions Tolgee Android SDK implements are `s`, `d` and `i`, `o`, `x` and
 `%%` prints a percent sign. Named arguments (`TolgeeMessageParams.Mapped`) throw
 `IllegalArgumentException: Only indexed or none parameters are supported` in Sprintf mode.
 
-## How do plurals work with Sprintf?
+## Translate plurals with Sprintf
 
 A Content Delivery in the "Android SDK" format publishes a plural as an object keyed by CLDR category:
 
@@ -76,7 +76,7 @@ the quantity first and passes it on as `%1$d`: `getQuantityString(id, n, n, …)
 `pluralStringResource(id, n, …)`. Passing the quantity only as a later argument selects the wrong form. One plural per
 string, as in Android resources.
 
-## How do arguments and plurals work with ICU?
+## Pass arguments and plurals with ICU
 
 ICU messages carry their own structure, so the app passes values and the message decides the form.
 
@@ -96,13 +96,13 @@ positional arguments, so ICU messages consumed through them must use `{0}`, `{1}
 need the key-based `t(key, Mapped(...))` call. Plural categories follow the CLDR rules that ship with the SDK; a
 JSON plural object of the Sprintf kind is not read in ICU mode.
 
-## How do string arrays work?
+## Translate string arrays
 
 Both formatters read arrays the same way: the delivery publishes a JSON array, and `getStringArray`, `tArray`,
 `tArrayFlow` and `stringArrayResource` return it. Arrays are not formatted; format the items yourself if they contain
 placeholders.
 
-## How do I keep markup in a translation?
+## Keep markup in a translation
 
 Android resources can carry inline markup such as `<b>`; `getText` returns it as a styled `CharSequence`. Through the
 wrapped context, `getText` keeps that behaviour for the bundled fallback. Tolgee Android SDK also offers `tStyled`,
@@ -110,7 +110,7 @@ wrapped context, `getText` keeps that behaviour for the bundled fallback. Tolgee
 `CharSequence`. The Compose helpers return plain `String`; build an `AnnotatedString` in the composable if you need
 styling there.
 
-## How do I format a number, a date or a percentage?
+## Format numbers, dates and percentages
 
 In Sprintf mode the resource decides: `%.1f` prints one decimal, `%,d` groups thousands in Java style, `%tY-%tm-%td`
 prints a date from a `LocalDateTime` argument, and `%%` prints a percent sign. The formatting follows the conventions of
@@ -119,7 +119,7 @@ translation text itself or from formatting the number before passing it as `%s`.
 `{d, date, short}` use the loaded language's conventions, which is the second reason to choose ICU for apps with heavy
 number and date formatting.
 
-## What happens on a mismatch?
+## Fix a formatter mismatch
 
 | Symptom | Cause | Fix |
 |---|---|---|
