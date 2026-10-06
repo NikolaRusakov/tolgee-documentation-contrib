@@ -74,7 +74,7 @@ With `attachBaseContext(TolgeeContextWrapper.wrap(newBase))` in every Activity (
 | Pattern | What happens after wrapping |
 |---|---|
 | `getString(id)`, `getString(id, args)`, `getText(id)` | Resolved by `TolgeeResources`, formatted with Sprintf, fallback to bundled |
-| `resources.getQuantityString(id, n, args)` | Plural form chosen by locale rules from the CDN object |
+| `resources.getQuantityString(id, n, args)` | Plural form chosen by locale rules from the CDN object. Tolgee fills `%1$d` with `n`, so drop an `n` you repeated at the start of `args` when the string has more than one placeholder |
 | `resources.getStringArray(id)` / `getTextArray(id)` | Array from the CDN |
 | Layout `android:text`, `android:hint`, `android:contentDescription` | Translated during inflation by `TolgeeLayoutInflaterFactory`, re-applied by `retranslate()` |
 | `Toast.makeText(this, R.string.x, …)`, `Snackbar.make(view, R.string.x, …)`, `AlertDialog.Builder(this).setTitle(R.string.x)` | Resolved through the wrapped context or the view's context |
@@ -106,13 +106,13 @@ import io.tolgee.Tolgee
 // Form 1: extension functions with automatic fallback
 val title = context.getStringT(R.string.notification_title)
 val body  = context.getStringT(R.string.notification_body, userName)
-val count = context.resources.getQuantityStringT(R.plurals.new_messages, n, n)
+val count = context.resources.getQuantityStringT(R.plurals.new_messages, n)
 
 // Form 2: explicit instance (useful when injecting Tolgee for tests)
 val tolgee = Tolgee.instance
 val title2 = tolgee.t(context, R.string.notification_title)
 val body2  = tolgee.t(context, R.string.notification_body, userName)
-val count2 = tolgee.tPlural(context.resources, R.plurals.new_messages, n, n)
+val count2 = tolgee.tPlural(context.resources, R.plurals.new_messages, n)
 val items  = tolgee.tArray(context.resources, R.array.options)
 ```
 
@@ -210,7 +210,7 @@ Done means: the four checks above pass and the exception list from step 6 is wri
 |---|---|---|
 | Some texts translate, others in the same screen do not | Those lookups run against a non-wrapped context (step 3) | Convert them to `getStringT` / `t(...)` or wrap that context |
 | Layout string never updates after `setLocale` | `retranslate()` not called, or the string has placeholders | Collect `changeFlow`; set parameterised strings from code |
-| Wrong plural form for a locale | `pluralStringResource(id, quantity, …)` / `getQuantityString(id, n, …)` called with the count only as a format arg | Pass the count as `quantity` and repeat it in `formatArgs` when the text prints it |
+| Wrong plural form for a locale | `pluralStringResource(id, quantity, …)` / `getQuantityString(id, n, …)` called with the count only as a format arg | Pass the count as `quantity` and do not repeat it in `formatArgs`; Tolgee fills `%1$d` from it |
 | Placeholders appear literally (`%1$s`) | Delivery exported with ICU placeholders while the SDK uses Sprintf | Export the delivery with Android placeholders, or set `formatter(Tolgee.Formatter.ICU)` |
 | Key exists on the platform but bundled text is shown | Key name differs (renamed resource, namespace) | Keep names identical; check `resources.getResourceEntryName(id)` |
 | Crash `IllegalArgumentException: Only indexed or none parameters are supported` | `TolgeeMessageParams.Mapped` used with Sprintf | Use positional arguments, or switch to ICU |

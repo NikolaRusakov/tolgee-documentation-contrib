@@ -39,17 +39,13 @@ same order as `getString`.
 ## Translate plurals
 
 `pluralStringResource(id, quantity, vararg formatArgs)` selects the CLDR form for the current language from `quantity`
-and passes `quantity` as `%1$d`, exactly like `Resources.getQuantityString(id, quantity, quantity, …)`. Pass only the
-remaining arguments.
+and passes `quantity` as `%1$d`. Pass only the remaining arguments; repeating the quantity, as plain Android resources
+need, shifts the following arguments by one place.
 
-```kotlin
-import io.tolgee.pluralStringResource
-
-// "%3$s: %1$d tests out of %2$d ok"
-Text(pluralStringResource(R.plurals.plr_test_placeholder_2, passed, total, "Tests"))
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/compose-plural-text.kt
 ```
 
-Only one plural per string is supported, matching Android resources.
+In the demo, `count` is the quantity, `param` fills `%2$d` and `"Plurals"` fills `%3$s`. Only one plural per string is supported, matching Android resources.
 
 ## Translate a string array
 
@@ -98,7 +94,7 @@ emits the current text and re-emits on every change. Collect it in the Activity'
 ```
 
 For one-off reads outside the UI, for example in a `Service`, use the `io.tolgee.common` extensions:
-`context.getStringT(R.string.key, args)` and `context.resources.getQuantityStringT(R.plurals.key, n, n)`.
+`context.getStringT(R.string.key, args)` and `context.resources.getQuantityStringT(R.plurals.key, n)`.
 
 ## Use translations in a ViewModel
 

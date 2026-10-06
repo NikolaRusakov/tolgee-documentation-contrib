@@ -71,10 +71,11 @@ A Content Delivery in the "Android SDK" format publishes a plural as an object k
 ```
 
 Tolgee Android SDK selects the category with the CLDR plural rules of the language it loaded, using the **first
-argument** as the quantity, and then formats the selected text with all arguments. That is why every plural API takes
-the quantity first and passes it on as `%1$d`: `getQuantityString(id, n, n, …)`, `tPlural(resources, id, n, …)`,
-`pluralStringResource(id, n, …)`. Passing the quantity only as a later argument selects the wrong form. One plural per
-string, as in Android resources.
+argument** as the quantity, and then formats the selected text with the quantity followed by the other arguments. That
+is why every plural API takes the quantity first and fills `%1$d` itself: `getQuantityString(id, n, …)`,
+`tPlural(resources, id, n, …)`, `pluralStringResource(id, n, …)`. Pass only the remaining arguments after it. Plain
+Android resources differ here: they expect the quantity repeated, as in `getQuantityString(id, n, n, …)`. One plural
+per string, as in Android resources.
 
 ## Pass arguments and plurals with ICU
 
@@ -126,7 +127,7 @@ number and date formatting.
 | `%1$s` shown literally | Delivery publishes Android placeholders, formatter set to ICU | Remove `formatter(ICU)` |
 | `{name}` shown literally | Delivery publishes ICU messages, formatter is Sprintf | Set `formatter(Tolgee.Formatter.ICU)` |
 | `IllegalArgumentException: Only indexed or none parameters …` | `TolgeeMessageParams.Mapped` with Sprintf | Use positional arguments, or switch to ICU |
-| Wrong plural form | Quantity not passed as the first argument | Pass the quantity first, then the remaining arguments |
+| Wrong plural form | Quantity not passed as the first argument, or repeated after it | Pass the quantity first, then only the remaining arguments |
 | Plural key returns nothing in ICU mode | Plural published as a Sprintf-style object | Export the delivery as ICU messages with `plural` inside the text |
 
 ## Next steps

@@ -60,9 +60,10 @@ from code, and keep them current with `tFlow` or the `bindTolgee` helper from th
 
 ## Fix a wrong plural form
 
-The quantity was passed only as a format argument. The quantity parameter selects the CLDR form and is also passed as
-`%1$d`; pass only the remaining arguments after it. Views: `getQuantityString(id, n, n, …)`. Compose:
-`pluralStringResource(id, n, …)`. Nested plurals inside one string are not supported.
+The quantity was passed only as a format argument. The quantity parameter selects the CLDR form, and Tolgee Android SDK
+also passes it as `%1$d`, so give only the remaining arguments after it. Views: `getQuantityString(id, n, …)`.
+Compose: `pluralStringResource(id, n, …)`. If you repeated the quantity as plain Android resources need, the following
+arguments shift by one place. Nested plurals inside one string are not supported.
 
 ## Fix placeholders that render literally
 

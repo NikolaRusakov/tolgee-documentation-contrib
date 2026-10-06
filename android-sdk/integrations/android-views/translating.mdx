@@ -52,9 +52,10 @@ Always set them from code, and see the `Flow` section below for keeping them cur
 
 ## Translate plurals
 
-Use `getQuantityString` with the quantity, then the format arguments. Android convention repeats the quantity as the
-first argument so the text can print it, and Tolgee Android SDK follows the same convention: the quantity selects the
-CLDR form (`one`, `few`, `other`) for the current language and fills `%1$d`.
+Use `getQuantityString` with the quantity, then the remaining format arguments. The quantity selects the CLDR form
+(`one`, `few`, `other`) for the current language, and Tolgee Android SDK also fills `%1$d` with it. Plain Android
+resources expect the quantity repeated; with Tolgee you do not repeat it, or the following arguments shift by one place.
+In the example, `%1$d` is the quantity, `%2$d` the second argument and `%3$s` the third.
 
 ```xml title="res/values/strings.xml"
 <plurals name="plr_test_placeholder_2">
@@ -63,8 +64,7 @@ CLDR form (`one`, `few`, `other`) for the current language and fills `%1$d`.
 </plurals>
 ```
 
-```kotlin
-val text = resources.getQuantityString(R.plurals.plr_test_placeholder_2, passed, passed, total, "Tests")
+```kotlin title="MainActivity.kt" file=<rootDir>/android-sdk/_snippets/views-plurals.kt
 ```
 
 Only one plural per string is supported, matching Android resources. Nested plurals inside one string are not.
@@ -169,7 +169,7 @@ import io.tolgee.Tolgee
 
 val title = context.getStringT(R.string.notification_title)
 val body = context.getStringT(R.string.notification_body, userName)
-val count = context.resources.getQuantityStringT(R.plurals.new_messages, n, n)
+val count = context.resources.getQuantityStringT(R.plurals.new_messages, n)
 
 // The same through the instance, useful when Tolgee is injected for tests
 val tolgee = Tolgee.instance
