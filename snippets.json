@@ -1,0 +1,162 @@
+{
+  "$comment": "Code blocks in android-sdk/** that come from the Tolgee Mobile Kotlin SDK demo apps at a pinned ref. Run `npm run snippets:sync` after editing, `npm run snippets:check` to verify. See scripts/syncSnippets.ts.",
+  "defaults": {
+    "repo": "tolgee/tolgee-mobile-kotlin-sdk",
+    "ref": "v1.0.0-alpha05",
+    "sha": "cea898b3955317255953a1ab2af49f57e70f4ee0"
+  },
+  "snippets": [
+    {
+      "id": "init",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MyApplication.kt",
+      "start": "^import android\\.app\\.Application",
+      "end": "^}$",
+      "expect": "availableLocaleTags",
+      "replace": [
+        {
+          "from": "96eacb8b07382b60c3f94b30405cc49b",
+          "to": "your-cdn-url-prefix"
+        }
+      ],
+      "note": "Used on both toolkit pages. The Compose demo's MyApplication omits availableLocaleTags and defaultLanguage, so the Views demo is the complete reference."
+    },
+    {
+      "id": "network-security",
+      "path": "demo/exampleandroid/src/main/res/xml/network_security.xml"
+    },
+    {
+      "id": "views-wrap-context",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "^  override fun attachBaseContext",
+      "end": "^  }$",
+      "expect": "TolgeeContextWrapper\\.wrap",
+      "drop": ["by the compiler"]
+    },
+    {
+      "id": "views-react-to-changes",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "^    lifecycleScope\\.launch",
+      "end": "^    }$",
+      "expect": "tolgee\\.retranslate"
+    },
+    {
+      "id": "views-preload",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "^  override fun onStart",
+      "end": "^  }$",
+      "expect": "tolgee\\.preload"
+    },
+    {
+      "id": "views-switch-language",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "findViewById<Button>\\(R\\.id\\.button_cs\\)",
+      "end": "^    }$",
+      "expect": "setLocale"
+    },
+    {
+      "id": "views-parameters",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "R\\.id\\.parameterized_text",
+      "end": "percentage_placeholder",
+      "expect": "getString"
+    },
+    {
+      "id": "views-plurals",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "R\\.id\\.plural_text",
+      "end": "plr_test_placeholder_2",
+      "expect": "getQuantityString"
+    },
+    {
+      "id": "views-array",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "start": "R\\.id\\.array_text",
+      "end": "array_test",
+      "expect": "getStringArray"
+    },
+    {
+      "id": "views-tolgeerc",
+      "path": "demo/exampleandroid/.tolgeerc",
+      "replace": [
+        {
+          "from": "\"projectId\": 20161",
+          "to": "\"projectId\": 12345"
+        }
+      ]
+    },
+    {
+      "id": "compose-imports",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "27-28",
+      "expect": "io\\.tolgee\\.stringResource"
+    },
+    {
+      "id": "compose-basic-text",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "59-66",
+      "expect": "fun BasicText"
+    },
+    {
+      "id": "compose-parametrized-text",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "68-75",
+      "expect": "fun ParametrizedText"
+    },
+    {
+      "id": "compose-plural-text",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "77-84",
+      "expect": "fun PluralText"
+    },
+    {
+      "id": "compose-title-flow",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "35-38",
+      "expect": "tFlow"
+    },
+    {
+      "id": "compose-change-locale-button",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "123-136",
+      "expect": "setLocale"
+    },
+    {
+      "id": "mp-setup",
+      "path": "demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/Setup.kt",
+      "start": "^import io\\.tolgee\\.Tolgee",
+      "end": "^}$",
+      "replace": [
+        {
+          "from": "96eacb8b07382b60c3f94b30405cc49b",
+          "to": "your-cdn-url-prefix"
+        }
+      ]
+    },
+    {
+      "id": "mp-app",
+      "path": "demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/App.kt",
+      "start": "^@Composable",
+      "end": "^}$",
+      "expect": "pluralStringResource",
+      "drop": ["compiler plugin"]
+    },
+    {
+      "id": "mp-tolgeerc",
+      "path": "demo/multiplatform-compose/.tolgeerc",
+      "replace": [
+        {
+          "from": "\"projectId\": 20161",
+          "to": "\"projectId\": 12345"
+        }
+      ]
+    }
+  ],
+  "notAvailableInDemos": [
+    "Gradle dependency and version catalog: the demos depend on project(\":core\") / project(\":compose\"), which no consumer can use. Hand-written on the pages with a Maven Central link instead of a pinned version.",
+    "AndroidManifest application tag: the demo manifest carries unrelated launcher and icon attributes; the two relevant attributes stay hand-written.",
+    "BaseActivity, bindTolgee helpers, tolgeeText ViewModel helper, per-environment BuildConfig URL: exist only in the starter apps, which are not part of any upstream tag.",
+    "Compose installation page init block: examplejetpack/MyApplication.kt lacks availableLocaleTags and defaultLanguage (Tolgee defect to report); the Views demo block is used instead.",
+    "Demo comments that mention the Tolgee compiler plugin (views MainActivity, multiplatform App) are removed with \"drop\": the plugin is disabled since Kotlin 2.2 and is not part of any release. Report to the SDK repository.",
+    "Compose demo imports only stringResource and pluralStringResource; stringArrayResource is described in prose."
+  ]
+}

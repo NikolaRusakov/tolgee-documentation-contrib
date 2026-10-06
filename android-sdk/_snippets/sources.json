@@ -1,0 +1,121 @@
+{
+  "repo": "tolgee/tolgee-mobile-kotlin-sdk",
+  "ref": "v1.0.0-alpha05",
+  "sha": "cea898b3955317255953a1ab2af49f57e70f4ee0",
+  "snippets": {
+    "init": {
+      "file": "init.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MyApplication.kt",
+      "lines": "3-21",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MyApplication.kt#L3-L21"
+    },
+    "network-security": {
+      "file": "network-security.xml",
+      "path": "demo/exampleandroid/src/main/res/xml/network_security.xml",
+      "lines": "1-7",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/res/xml/network_security.xml#L1-L7"
+    },
+    "views-wrap-context": {
+      "file": "views-wrap-context.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "18-22",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L18-L22"
+    },
+    "views-react-to-changes": {
+      "file": "views-react-to-changes.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "27-38",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L27-L38"
+    },
+    "views-preload": {
+      "file": "views-preload.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "75-82",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L75-L82"
+    },
+    "views-switch-language": {
+      "file": "views-switch-language.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "59-62",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L59-L62"
+    },
+    "views-parameters": {
+      "file": "views-parameters.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "67-68",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L67-L68"
+    },
+    "views-plurals": {
+      "file": "views-plurals.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "69-70",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L69-L70"
+    },
+    "views-array": {
+      "file": "views-array.kt",
+      "path": "demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt",
+      "lines": "71-72",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/src/main/java/io/tolgee/demo/exampleandroid/MainActivity.kt#L71-L72"
+    },
+    "views-tolgeerc": {
+      "file": "views-tolgeerc.json",
+      "path": "demo/exampleandroid/.tolgeerc",
+      "lines": "1-13",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/exampleandroid/.tolgeerc#L1-L13"
+    },
+    "compose-imports": {
+      "file": "compose-imports.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "27-28",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L27-L28"
+    },
+    "compose-basic-text": {
+      "file": "compose-basic-text.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "59-66",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L59-L66"
+    },
+    "compose-parametrized-text": {
+      "file": "compose-parametrized-text.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "68-75",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L68-L75"
+    },
+    "compose-plural-text": {
+      "file": "compose-plural-text.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "77-84",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L77-L84"
+    },
+    "compose-title-flow": {
+      "file": "compose-title-flow.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "35-38",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L35-L38"
+    },
+    "compose-change-locale-button": {
+      "file": "compose-change-locale-button.kt",
+      "path": "demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt",
+      "lines": "123-136",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/examplejetpack/src/main/java/io/tolgee/demo/examplejetpack/MainActivity.kt#L123-L136"
+    },
+    "mp-setup": {
+      "file": "mp-setup.kt",
+      "path": "demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/Setup.kt",
+      "lines": "3-14",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/Setup.kt#L3-L14"
+    },
+    "mp-app": {
+      "file": "mp-app.kt",
+      "path": "demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/App.kt",
+      "lines": "18-53",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/multiplatform-compose/src/commonMain/kotlin/io/tolgee/demo/compose/App.kt#L18-L53"
+    },
+    "mp-tolgeerc": {
+      "file": "mp-tolgeerc.json",
+      "path": "demo/multiplatform-compose/.tolgeerc",
+      "lines": "1-13",
+      "blob": "https://github.com/tolgee/tolgee-mobile-kotlin-sdk/blob/cea898b3955317255953a1ab2af49f57e70f4ee0/demo/multiplatform-compose/.tolgeerc#L1-L13"
+    }
+  }
+}

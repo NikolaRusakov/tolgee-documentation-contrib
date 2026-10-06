@@ -13,20 +13,20 @@ const path = require('path');
 
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.error('usage: node scripts/docsPreflight.js <folder-or-file.mdx> [...]');
+  console.error(
+    'usage: node scripts/docsPreflight.js <folder-or-file.mdx> [...]'
+  );
   process.exit(2);
 }
 
 function listMdx(target) {
   const stat = fs.statSync(target);
   if (stat.isFile()) return [target];
-  return fs
-    .readdirSync(target, { withFileTypes: true })
-    .flatMap((e) => {
-      const p = path.join(target, e.name);
-      if (e.isDirectory()) return listMdx(p);
-      return e.name.endsWith('.mdx') && !e.name.startsWith('_') ? [p] : [];
-    });
+  return fs.readdirSync(target, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(target, e.name);
+    if (e.isDirectory()) return listMdx(p);
+    return e.name.endsWith('.mdx') && !e.name.startsWith('_') ? [p] : [];
+  });
 }
 
 function parseFrontMatter(src) {
@@ -45,7 +45,11 @@ function prose(body) {
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/^import .*$/gm, ' ')
     .replace(/`[^`\n]*`/g, ' ')
-    .replace(/<FaqSection[\s\S]*?\/>/g, (m) => [...m.matchAll(/(?:question|answer):\s*'([^']*)'/g)].map((x) => x[1]).join(' '))
+    .replace(/<FaqSection[\s\S]*?\/>/g, (m) =>
+      [...m.matchAll(/(?:question|answer):\s*'([^']*)'/g)]
+        .map((x) => x[1])
+        .join(' ')
+    )
     .replace(/<[^>]+>/g, ' ')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
@@ -58,47 +62,97 @@ function check(file) {
   const src = fs.readFileSync(file, 'utf8');
   const { data, body } = parseFrontMatter(src);
   const results = [];
-  const ok = (name, pass, detail, warn = false) => results.push({ name, pass, detail, warn });
+  const ok = (name, pass, detail, warn = false) =>
+    results.push({ name, pass, detail, warn });
 
   // 1. front matter
   const desc = data.description || '';
-  ok('frontmatter id/title/description/image', !!(data.id && data.title && desc && data.image), Object.keys(data).join(','));
-  ok('description < 155 chars', desc.length > 0 && desc.length < 155, `${desc.length}`);
+  ok(
+    'frontmatter id/title/description/image',
+    !!(data.id && data.title && desc && data.image),
+    Object.keys(data).join(',')
+  );
+  ok(
+    'description < 155 chars',
+    desc.length > 0 && desc.length < 155,
+    `${desc.length}`
+  );
 
   // 2. tl;dr: first prose paragraph after imports/banners, 40-80 words, no links, no bullets
   const paragraphs = body
     .split(/\n\s*\n/)
     .map((p) => p.trim())
-    .filter((p) => p && !p.startsWith('import ') && !p.startsWith('<') && !p.startsWith('#') && !p.startsWith(':::'));
+    .filter(
+      (p) =>
+        p &&
+        !p.startsWith('import ') &&
+        !p.startsWith('<') &&
+        !p.startsWith('#') &&
+        !p.startsWith(':::')
+    );
   const tldr = paragraphs[0] || '';
   const tldrWords = words(prose(tldr));
-  ok('tl;dr 40-80 words, plain prose', tldrWords >= 40 && tldrWords <= 80 && !/\]\(/.test(tldr) && !/^[-*]/.test(tldr), `${tldrWords} words`);
+  ok(
+    'tl;dr 40-80 words, plain prose',
+    tldrWords >= 40 &&
+      tldrWords <= 80 &&
+      !/\]\(/.test(tldr) &&
+      !/^[-*]/.test(tldr),
+    `${tldrWords} words`
+  );
 
   // 3. word count
   const total = words(prose(body));
-  ok('800+ words (or deliberate stub)', total >= 800, `${total} words${total < 800 ? ' (stub?)' : ''}`);
+  ok(
+    '800+ words (or deliberate stub)',
+    total >= 800,
+    `${total} words${total < 800 ? ' (stub?)' : ''}`
+  );
 
   // 4. actionable H2s: imperative, no trailing "?", at most 8 words (client convention)
   const h2s = [...body.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
   const nonActionable = h2s.filter(
-    (h) => /\?$/.test(h) || h.split(/\s+/).length > 8 || /^(how|what|why|which|when|where|can|do|does|is|are)\b/i.test(h)
+    (h) =>
+      /\?$/.test(h) ||
+      h.split(/\s+/).length > 8 ||
+      /^(how|what|why|which|when|where|can|do|does|is|are)\b/i.test(h)
   );
-  ok('H2s are actionable (no "?", <= 8 words)', nonActionable.length === 0, nonActionable.slice(0, 2).join(' | '));
+  ok(
+    'H2s are actionable (no "?", <= 8 words)',
+    nonActionable.length === 0,
+    nonActionable.slice(0, 2).join(' | ')
+  );
 
   // 5. no TODO / WIP / FIXME / commented notes
-  ok('no TODO/WIP/FIXME/comments', !/TODO|FIXME|\bWIP\b|\{\/\*|<!--/.test(body), '');
+  ok(
+    'no TODO/WIP/FIXME/comments',
+    !/TODO|FIXME|\bWIP\b|\{\/\*|<!--/.test(body),
+    ''
+  );
 
   // 6. links: routes not files, no bare URLs in prose, >= 3 internal links
   const links = [...body.matchAll(/\]\(([^)]+)\)/g)].map((m) => m[1]);
-  const fileLinks = links.filter((l) => /\.mdx?(#|$)/.test(l) && !/^https?:/.test(l));
+  const fileLinks = links.filter(
+    (l) => /\.mdx?(#|$)/.test(l) && !/^https?:/.test(l)
+  );
   const internal = links.filter((l) => l.startsWith('/'));
-  const bare = prose(body.replace(/\]\([^)]*\)/g, ']()')).match(/https?:\/\/\S+/g) || [];
-  ok('links use routes, not files', fileLinks.length === 0, fileLinks.join(' '));
+  const bare =
+    prose(body.replace(/\]\([^)]*\)/g, ']()')).match(/https?:\/\/\S+/g) || [];
+  ok(
+    'links use routes, not files',
+    fileLinks.length === 0,
+    fileLinks.join(' ')
+  );
   ok('>= 3 internal links out', internal.length >= 3, `${internal.length}`);
   ok('no bare URLs in prose', bare.length === 0, bare.slice(0, 3).join(' '));
 
   // 7. FAQ block, 8. Next steps, 9. code block
-  ok('FAQ block (FaqSection)', /<FaqSection/.test(body), 'FAQ pending Tolgee support questions', true);
+  ok(
+    'FAQ block (FaqSection)',
+    /<FaqSection/.test(body),
+    'FAQ pending Tolgee support questions',
+    true
+  );
   ok('"Next steps" section', /^## Next steps/m.test(body), '');
   ok('>= 1 code block', /```/.test(body), '');
 
@@ -115,8 +169,15 @@ for (const file of args.flatMap(listMdx)) {
   const fails = results.filter((r) => !r.pass && !r.warn);
   const warns = results.filter((r) => !r.pass && r.warn);
   if (fails.length) failed = true;
-  console.log(`${fails.length ? '✗' : '✓'} ${file}  (${total} words, ${results.length - fails.length - warns.length}/${results.length - warns.length}${warns.length ? `, ${warns.length} warning` : ''})`);
-  for (const r of fails) console.log(`    - ${r.name}${r.detail ? `: ${r.detail}` : ''}`);
+  console.log(
+    `${fails.length ? '✗' : '✓'} ${file}  (${total} words, ${
+      results.length - fails.length - warns.length
+    }/${results.length - warns.length}${
+      warns.length ? `, ${warns.length} warning` : ''
+    })`
+  );
+  for (const r of fails)
+    console.log(`    - ${r.name}${r.detail ? `: ${r.detail}` : ''}`);
   for (const r of warns) console.log(`    ~ ${r.name}: ${r.detail}`);
 }
 process.exit(failed ? 1 : 0);

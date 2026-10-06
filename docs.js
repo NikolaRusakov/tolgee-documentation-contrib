@@ -59,6 +59,8 @@ const docs = [
       id: 'android-sdk',
       path: 'android-sdk',
       routeBasePath: 'android-sdk',
+      // Fills ```lang file=<rootDir>/android-sdk/_snippets/x``` blocks from snippets.json at build time.
+      beforeDefaultRemarkPlugins: [require('./plugins/remark-snippet-file.cjs')],
       sidebarPath: require.resolve('./sidebarAndroidSdk.js'),
       lastVersion: 'current',
       includeCurrentVersion: true,

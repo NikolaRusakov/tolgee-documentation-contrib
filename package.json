@@ -18,6 +18,8 @@
     "tsc": "tsc --noEmit",
     "oss": "tsx scripts/downloadOssData.ts",
     "cli-schema": "tsx scripts/downloadCliSchema.ts",
+    "snippets:sync": "tsx scripts/syncSnippets.ts",
+    "snippets:check": "tsx scripts/syncSnippets.ts --check",
     "download-api-spec": "tsx apiSpecGeneration/scripts/downloadApiSpec.ts",
     "enhance-docs": "tsx apiSpecGeneration/scripts/enhanceDocs.ts",
     "prefix-tag-ids": "tsx apiSpecGeneration/scripts/prefixTagIds.ts",

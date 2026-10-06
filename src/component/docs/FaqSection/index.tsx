@@ -8,7 +8,11 @@ export type FaqItem = { question: string; answer: string };
  * FAQPage JSON-LD (https://schema.org/FAQPage) so answer engines can quote them.
  * Answers are plain text on purpose: the same string feeds the structured data.
  */
-export default function FaqSection({ items }: { items: FaqItem[] }): JSX.Element {
+export default function FaqSection({
+  items,
+}: {
+  items: FaqItem[];
+}): JSX.Element {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
