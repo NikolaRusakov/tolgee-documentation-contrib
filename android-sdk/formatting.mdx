@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, formatting, sprintf, icu, placeholders, plurals, TolgeeMessageParams, content delivery format]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK formats a translation with one of two formatters chosen in `Tolgee.init`: **Sprintf**, the default,
 understands Android and Java placeholders such as `%1$s` and `%d`; **ICU** understands messages such as
 `{name} has {count, plural, one {# item} other {# items}}`. This page is for anyone deciding between them or debugging
@@ -130,33 +128,6 @@ number and date formatting.
 | `IllegalArgumentException: Only indexed or none parameters …` | `TolgeeMessageParams.Mapped` with Sprintf | Use positional arguments, or switch to ICU |
 | Wrong plural form | Quantity not passed as the first argument | Pass the quantity first, then the remaining arguments |
 | Plural key returns nothing in ICU mode | Plural published as a Sprintf-style object | Export the delivery as ICU messages with `plural` inside the text |
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Can I mix Sprintf and ICU strings in one app?',
-      answer:
-        'No. One formatter applies to the whole Tolgee instance and it must match the Content Delivery format. Create a second instance with Tolgee.new if two deliveries with different formats really have to coexist.',
-    },
-    {
-      question: 'Does the formatter change how strings.xml is read?',
-      answer:
-        'No. Bundled resources are always formatted by Android itself. The formatter only applies to text that arrives from the Content Delivery.',
-    },
-    {
-      question: 'Which placeholder should I use for a percentage?',
-      answer:
-        'In Sprintf mode write %1$s %% in the resource, exactly as in Android. The double percent sign prints one percent character.',
-    },
-    {
-      question: 'Are plural rules for every language included?',
-      answer:
-        'Yes. Tolgee Android SDK ships CLDR plural rules for both formatters and selects the category from the language it loaded, not from the device locale.',
-    },
-  ]}
-/>
 
 ## Next steps
 

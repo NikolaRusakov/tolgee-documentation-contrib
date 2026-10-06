@@ -12,7 +12,6 @@ import CdnPrerequisite from '@site/android-sdk/shared/_CdnPrerequisite.mdx';
 import NetworkSecurityConfig from '@site/android-sdk/shared/_NetworkSecurityConfig.mdx';
 import TolgeeInit from '@site/android-sdk/shared/_TolgeeInit.mdx';
 import PreparingForProduction from '@site/android-sdk/shared/_PreparingForProduction.mdx';
-import FaqSection from '@site/src/component/docs/FaqSection';
 
 Tolgee Android SDK adds over the air translation updates to Android apps built with Jetpack Compose. You add one Gradle
 dependency, allow the Tolgee CDN in your network security config, initialize Tolgee in your Application class with your
@@ -149,38 +148,6 @@ added. A plural shows the wrong form: the count was passed only as a format argu
 ## How do I prepare for production?
 
 <PreparingForProduction />
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Do I need TolgeeContextWrapper in a Compose app?',
-      answer:
-        'No. The io.tolgee composables read through the Tolgee instance directly. Wrap the Activity context only if the same app also has XML layouts or calls getString outside composables.',
-    },
-    {
-      question: 'Do the Tolgee helpers recompose when the language changes?',
-      answer:
-        'Yes. Each helper collects tFlow as state, so a setLocale call recomposes every text rendered through them without any extra code.',
-    },
-    {
-      question: 'Do previews and screenshot tests still work?',
-      answer:
-        'Yes. When Tolgee.init has not run, stringResource, pluralStringResource and stringArrayResource delegate to the platform composables and render the bundled resource.',
-    },
-    {
-      question: 'Can I use Tolgee Android SDK with Compose Multiplatform?',
-      answer:
-        'Yes. Add the compose artifact to commonMain, initialize Tolgee from each platform entry point, and use the same helpers with Res.string and Res.plurals resources. Push resources to Tolgee with the COMPOSE_XML format so key names match.',
-    },
-    {
-      question: 'Which SDK version should I use?',
-      answer:
-        'Always the latest release on Maven Central under the group io.tolgee.mobile-kotlin-sdk. The SDK is pre-1.0 and the public API can change between releases.',
-    },
-  ]}
-/>
 
 ## Next steps
 

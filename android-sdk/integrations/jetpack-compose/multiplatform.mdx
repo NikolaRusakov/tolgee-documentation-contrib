@@ -7,8 +7,6 @@ image: /img/og-images/jetpack-compose.png
 keywords: [tolgee, compose multiplatform, kotlin multiplatform, Res.string, COMPOSE_XML, stringResource, desktop, ios, wasm]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK is a Kotlin Multiplatform library, and its `compose` artifact works in Compose Multiplatform
 projects on Android, JVM desktop, iOS, macOS, JavaScript and Wasm. You add the artifact to `commonMain`, keep your
 strings in `composeResources`, push them to Tolgee in the `COMPOSE_XML` format, and use the same `stringResource`
@@ -181,33 +179,6 @@ The language is not persisted by the SDK; store the tag with your platform's set
 
 The [Compose Multiplatform demo](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo/multiplatform-compose)
 in the SDK repository is the reference for this page.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Is Compose Multiplatform officially supported?',
-      answer:
-        'The compose artifact is published for Android, JVM, iOS, macOS, JS and Wasm and the SDK repository has a Compose Multiplatform demo. Android is the most exercised target; treat the others as pre-1.0 like the SDK itself.',
-    },
-    {
-      question: 'Can I use the same Tolgee project for the Android app and the desktop app?',
-      answer:
-        'Yes. One project, one Content Delivery in the Android SDK format, one set of keys pushed as COMPOSE_XML from the shared composeResources folder.',
-    },
-    {
-      question: 'Why do I need my own storage provider on desktop or iOS?',
-      answer:
-        'Tolgee Android SDK ships a file-based provider for Android only. The interface has two methods, put and get, so a platform implementation is a few lines.',
-    },
-    {
-      question: 'Do the plural helpers behave the same on every platform?',
-      answer:
-        'Yes. The plural category is chosen by the CLDR rules that ship with the SDK from the loaded language, independent of the platform.',
-    },
-  ]}
-/>
 
 ## Next steps
 

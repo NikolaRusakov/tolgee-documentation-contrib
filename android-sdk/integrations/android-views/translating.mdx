@@ -8,7 +8,6 @@ keywords: [tolgee, android views, getString, plurals, string array, tFlow, TextV
 ---
 
 import StarterBanner from '@site/android-sdk/shared/StarterBanner';
-import FaqSection from '@site/src/component/docs/FaqSection';
 
 Tolgee Android SDK translates strings in Android Views apps through the wrapped Activity context and through a small
 set of `Flow` APIs. Static text in layouts and plain `getString` calls need no change once the context is wrapped.
@@ -212,38 +211,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val title: StateFlow<String> = tolgeeText(app, R.string.app_name)
 }
 ```
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Why does a layout string with a placeholder stay in English?',
-      answer:
-        'The layout inflater translates only strings without format placeholders, because it cannot know the arguments. Set such strings from code with getString or bindTolgee.',
-    },
-    {
-      question: 'Which plural form does Tolgee Android SDK choose?',
-      answer:
-        'The CLDR category for the current language and the quantity you pass, the same rule Android uses for getQuantityString. The Content Delivery publishes plurals as an object keyed by category.',
-    },
-    {
-      question: 'Do I need tFlow for every TextView?',
-      answer:
-        'No. Static layout text is refreshed by retranslate in the base Activity. Use tFlow, or the bindTolgee helpers, only for text you set from code with arguments.',
-    },
-    {
-      question: 'Can I get a styled CharSequence instead of a String?',
-      answer:
-        'Yes. Tolgee Android SDK exposes tStyled, tPluralStyled and tArrayStyled on the instance, and the wrapped getText keeps markup from the bundled resource.',
-    },
-    {
-      question: 'What if a key exists in strings.xml but not in Tolgee?',
-      answer:
-        'The bundled string is returned. Push strings.xml with the Tolgee CLI so both sides have the same key names, and check the name with TolgeeAndroid.getKeyFromResources when in doubt.',
-    },
-  ]}
-/>
 
 ## Next steps
 

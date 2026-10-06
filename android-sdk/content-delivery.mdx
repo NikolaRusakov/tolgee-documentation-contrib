@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, content delivery, cdn, android sdk format, json, strings.xml, tolgee cli, availableLocaleTags, cache]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Content Delivery is the CDN endpoint from which Tolgee Android SDK loads translations at runtime. You create it
 once per project in the Tolgee Platform, in the **Android SDK** format, and paste its public URL prefix into
 `Tolgee.init`. This page is for anyone setting up or debugging that endpoint: the format choice, the one-command check,
@@ -182,38 +180,6 @@ by default (`maxLocalesInMemory = 1`); raise it for apps that switch languages o
 Yes. A self-hosted Tolgee publishes to the storage you configure. Point `url` at that host, add the host to
 `res/xml/network_security.xml`, and keep the "Android SDK" format. The [self-hosting docs](/platform/self_hosting/getting_started)
 cover the server side.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Why does my app show only bundled strings although the Content Delivery exists?',
-      answer:
-        'Most often the delivery is not in the Android SDK format, or path points at strings.xml. Run the curl check: the response must be a JSON object. XML or 404 means the delivery, not the app, needs fixing.',
-    },
-    {
-      question: 'Is the Content Delivery URL secret?',
-      answer:
-        'No. It only allows reading published translations. Tolgee API keys are used by the CLI and never enter the app.',
-    },
-    {
-      question: 'Do I still need strings.xml?',
-      answer:
-        'Yes. It provides the key names, the offline fallback, and the text shown before the first CDN response. Push it with the Tolgee CLI so both sides share the same keys.',
-    },
-    {
-      question: 'How fast does a change reach users?',
-      answer:
-        'The delivery publishes within seconds when auto-publish is on. The CDN edge caches for up to fifteen minutes, and the app fetches on preload or on the first composable that reads a string.',
-    },
-    {
-      question: 'Can I use namespaces?',
-      answer:
-        'No. Tolgee Android SDK reads one namespace-less delivery. Publish all keys of the app in a single Content Delivery.',
-    },
-  ]}
-/>
 
 ## Next steps
 

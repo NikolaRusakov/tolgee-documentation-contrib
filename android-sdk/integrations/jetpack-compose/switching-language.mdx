@@ -7,8 +7,6 @@ image: /img/og-images/jetpack-compose.png
 keywords: [tolgee, jetpack compose, setLocale, changeFlow, collectAsState, locale switcher, language fallback]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK changes the language of a Jetpack Compose app at runtime with one call, `setLocale`. Every text
 rendered by the `io.tolgee` helpers recomposes on its own, because each helper collects `tFlow` as state. A locale
 switcher composable therefore needs no manual reload: it observes the current language through `changeFlow` and calls
@@ -76,33 +74,6 @@ Tolgee Android SDK resolves a locale progressively: `zh-Hans-CN` falls back to `
 `defaultLanguage` from `Tolgee.init`. A device set to `en-US` receives the `en` translations. When a key is missing in
 the resolved language, the helper returns the bundled Android resource for the device configuration. The rules are on
 [Language and fallback](/android-sdk/language).
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Do I need to call preload after setLocale in Compose?',
-      answer:
-        'No. The io.tolgee helpers collect tFlow, which loads the new language on its own. preload is only needed in Views code that reads strings imperatively.',
-    },
-    {
-      question: 'Does the window title change with the language?',
-      answer:
-        'Not by itself, because it is not a composable. Collect tFlow for R.string.app_name in the Activity and assign it to title, as shown on the Translating page.',
-    },
-    {
-      question: 'Why does a switch show the bundled text?',
-      answer:
-        'The language is not published in the Content Delivery, or it is missing from availableLocaleTags so fallback resolved to defaultLanguage. Publish it and add it to the list.',
-    },
-    {
-      question: 'Does Tolgee Android SDK follow the system language?',
-      answer:
-        'Yes by default. The initial locale is the device locale resolved against the published languages with BCP 47 fallback.',
-    },
-  ]}
-/>
 
 ## Next steps
 

@@ -8,7 +8,6 @@ keywords: [tolgee, jetpack compose, stringResource, pluralStringResource, string
 ---
 
 import StarterBanner from '@site/android-sdk/shared/StarterBanner';
-import FaqSection from '@site/src/component/docs/FaqSection';
 
 Tolgee Android SDK translates strings in Jetpack Compose through three composable helpers in the `io.tolgee` package:
 `stringResource`, `pluralStringResource` and `stringArrayResource`. They take the same arguments as the Compose
@@ -130,33 +129,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), app.getString(R.string.app_name))
 }
 ```
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'What happens in a @Preview or a unit test?',
-      answer:
-        'Tolgee is not initialized there, so the helpers delegate to the androidx.compose.ui.res composables and render the bundled resource. No mocking is needed.',
-    },
-    {
-      question: 'Why does my plural show the wrong form?',
-      answer:
-        'The count was passed only as a format argument. The second parameter of pluralStringResource is the quantity that selects the form; it is also passed as %1$d, so pass only the remaining arguments after it.',
-    },
-    {
-      question: 'Can I still use LocalContext.current.getString?',
-      answer:
-        'It returns the bundled string unless the Activity context is wrapped with TolgeeContextWrapper. Prefer the io.tolgee stringResource helper, which also recomposes on changes.',
-    },
-    {
-      question: 'How do I translate a string that contains styling?',
-      answer:
-        'The helpers return plain String. For styled text read the translation with stringResource and build an AnnotatedString in the composable, or use tStyled on the Tolgee instance outside Compose.',
-    },
-  ]}
-/>
 
 ## Next steps
 

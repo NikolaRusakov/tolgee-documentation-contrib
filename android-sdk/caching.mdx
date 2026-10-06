@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, caching, preload, preloadAll, TolgeeStorageProvider, offline, maxLocalesInMemory, changeFlow]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK loads translations lazily and in a fixed order: the Content Delivery first, the on-device cache
 when the network fails, and the bundled Android resources when both are empty. This page is for anyone who wants to
 know what the user sees at each moment, how to warm the cache with `preload` and `preloadAll`, how many languages stay
@@ -120,33 +118,6 @@ Tolgee.init {
 Every successful CDN fetch replaces the stored copy, and the SDK fetches on every load, so a device that opens the app
 is at most one CDN edge cache period behind the platform: about fifteen minutes after publishing. There is no
 background refresh; call `preload` again when the app returns to the foreground if that matters for your content.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Does Tolgee Android SDK ever serve stale text over fresh text?',
-      answer:
-        'No. The CDN is asked first on every load and its response overwrites the cache. The cache is used only when the network fails.',
-    },
-    {
-      question: 'How do I clear the cache?',
-      answer:
-        'Release a new version code, which starts a fresh cache directory, or delete the tolgee/localization-cache folder under filesDir yourself. There is no runtime clear API.',
-    },
-    {
-      question: 'Why does the first frame show English?',
-      answer:
-        'The bundled resource is shown until the storage read or the CDN response completes. Keep values-xx/strings.xml up to date with tolgee pull so the first frame is already in the right language.',
-    },
-    {
-      question: 'Is anything loaded in Tolgee.init?',
-      answer:
-        'No. Initialization only stores the configuration. The first preload or tFlow collector triggers the manifest and language load.',
-    },
-  ]}
-/>
 
 ## Next steps
 

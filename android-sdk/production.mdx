@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, production, over the air updates, caching, offline, sprintf, icu, network security, testing]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK is designed so that a production app never depends on the network to show text: translations are
 cached on the device and the bundled resources remain the fallback. This page is for anyone preparing the first
 release with Tolgee Android SDK. It covers one Content Delivery URL per environment, how the cache is invalidated, what
@@ -89,33 +87,6 @@ refreshes, within about fifteen minutes, receive the corrected file, and nothing
 can be unpublished the same way; devices then fall back to the bundled resource for it. For an emergency without
 platform access, the bundled strings are what users see when the delivery is unreachable, which is one more reason to
 keep them current.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Can a bad translation on the platform crash the app?',
-      answer:
-        'No. A missing key or an unparsable file makes the SDK return the bundled resource. A placeholder mismatch shows the placeholder literally, which is why the formatter must match the delivery format.',
-    },
-    {
-      question: 'Do I need a new release when I add a language?',
-      answer:
-        'No, as long as availableLocaleTags is not hard-coded or the delivery serves a manifest. Publish the language in the Content Delivery; devices pick it up on the next preload.',
-    },
-    {
-      question: 'How much does the SDK download?',
-      answer:
-        'One JSON file per language that is actually used, on cold start or preload, and only when the CDN answers. The file is cached on the device afterwards.',
-    },
-    {
-      question: 'Should I bump the version code to reset the cache?',
-      answer:
-        'Only through a normal release. The cache is keyed by version code on purpose so that each release starts clean; there is no runtime reset API.',
-    },
-  ]}
-/>
 
 ## Next steps
 

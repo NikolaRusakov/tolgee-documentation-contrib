@@ -12,7 +12,6 @@ import CdnPrerequisite from '@site/android-sdk/shared/_CdnPrerequisite.mdx';
 import NetworkSecurityConfig from '@site/android-sdk/shared/_NetworkSecurityConfig.mdx';
 import TolgeeInit from '@site/android-sdk/shared/_TolgeeInit.mdx';
 import PreparingForProduction from '@site/android-sdk/shared/_PreparingForProduction.mdx';
-import FaqSection from '@site/src/component/docs/FaqSection';
 
 Tolgee Android SDK adds over the air translation updates to Android apps built with Activities and XML layouts. You add
 one Gradle dependency, allow the Tolgee CDN in your network security config, initialize Tolgee in your Application class
@@ -176,38 +175,6 @@ layouts translates but text set from code does not: that code runs against a con
 ## How do I prepare for production?
 
 <PreparingForProduction />
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Do I have to change every getString call?',
-      answer:
-        'No. Once the Activity context is wrapped with TolgeeContextWrapper, getString, getQuantityString, getStringArray and layout inflation resolve through Tolgee automatically. Only code that runs outside an Activity needs the explicit API.',
-    },
-    {
-      question: 'Does the context wrapper work with AppCompatActivity and Fragments?',
-      answer:
-        'Yes. Override attachBaseContext in AppCompatActivity, ComponentActivity or Activity in the same way. Fragments use the Activity context through requireContext, so they are covered.',
-    },
-    {
-      question: 'Why is buildConfig = true required?',
-      answer:
-        'TolgeeStorageProviderAndroid keys the on-device cache by BuildConfig.VERSION_CODE so that a new app version starts with an empty cache. Newer Android Gradle Plugin versions disable BuildConfig generation by default.',
-    },
-    {
-      question: 'Which SDK version should I use?',
-      answer:
-        'Always the latest release on Maven Central under the group io.tolgee.mobile-kotlin-sdk. The SDK is pre-1.0 and the public API can change between releases, so do not copy a version number from an old example.',
-    },
-    {
-      question: 'Do previews and unit tests still work?',
-      answer:
-        'Yes. When Tolgee.init has not run, TolgeeContextWrapper.wrap returns a plain wrapper and every lookup returns the bundled resource, so tests and layout previews behave exactly as before.',
-    },
-  ]}
-/>
 
 ## Next steps
 

@@ -8,8 +8,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, android localization, over the air translations, strings.xml, jetpack compose, content delivery]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK is a Kotlin library that adds over the air translation updates to Android apps built with Views or
 Jetpack Compose. You keep your `strings.xml`, push the keys to the Tolgee Platform, and initialize Tolgee Android SDK
 with a Content Delivery URL. The app then loads translations from the Tolgee CDN at runtime, switches language without
@@ -80,38 +78,6 @@ commit. Every code block in these docs is a file from one of them.
 
 Larger demo apps, including Compose Multiplatform, live in the
 [demo folder](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/demo) of the same repository.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Does Tolgee Android SDK replace strings.xml?',
-      answer:
-        'No. strings.xml stays in the app as the source of key names and as the offline fallback. Tolgee Android SDK adds translations delivered over the air on top of it.',
-    },
-    {
-      question: 'Do I need a new app release to change a translation?',
-      answer:
-        'No. Change the text in the Tolgee Platform and publish the Content Delivery. Every installed app loads the new text on its next start, or immediately when it calls preload.',
-    },
-    {
-      question: 'What happens when the device is offline?',
-      answer:
-        'The SDK serves the last translations it cached on the device. On a fresh install with no cache it returns the bundled Android string, so the UI is never empty.',
-    },
-    {
-      question: 'Can I use Tolgee Android SDK with both Views and Jetpack Compose in one app?',
-      answer:
-        'Yes. Add the compose artifact, which includes core, initialize Tolgee once in the Application class, wrap Activity contexts for the Views screens and switch the stringResource imports in the Compose screens.',
-    },
-    {
-      question: 'Is the Content Delivery URL a secret?',
-      answer:
-        'No. The URL prefix only allows reading published translations, so it can live in the app. Tolgee API keys are used by the Tolgee CLI on your machine or in CI and never enter the APK.',
-    },
-  ]}
-/>
 
 ## Next steps
 

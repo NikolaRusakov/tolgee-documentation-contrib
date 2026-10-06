@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, get started, over the air, bundled translations, tolgee cli, android views, jetpack compose]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee delivers Android translations two ways: bundled in the APK with the Tolgee CLI, or over the air through a
 Content Delivery read by Tolgee Android SDK. This page is for anyone starting an integration. It settles that choice,
 points you at the guide for your UI toolkit, and lists what to prepare in the Tolgee Platform before you change any
@@ -71,38 +69,6 @@ With the three items above ready, the installation guides take about fifteen min
 [starter apps](https://github.com/tolgee/tolgee-mobile-kotlin-sdk/tree/master/starters) go from clone to a
 translation arriving over the air in under thirty minutes, including the platform steps, and their README is the
 playbook the guides follow.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Can I start bundled and move to over the air later?',
-      answer:
-        'Yes, and it is a common path. The keys and translations already live in Tolgee, so you create a Content Delivery in the Android SDK format, add the SDK and initialize it. No key renaming and no change to your strings.xml.',
-    },
-    {
-      question: 'Does over the air mean my app stops working offline?',
-      answer:
-        'No. Tolgee Android SDK caches the last translations on the device and falls back to the bundled strings.xml when the cache is empty, so a fresh install with no network still shows text.',
-    },
-    {
-      question: 'Do I have to keep strings.xml if I create keys on the platform?',
-      answer:
-        'Keep it. It supplies the offline fallback and the text shown before the first response. Run tolgee pull to generate the values-xx folders from the platform so you do not maintain them by hand.',
-    },
-    {
-      question: 'Which languages can the app show?',
-      answer:
-        'The languages published in the Content Delivery, listed in availableLocaleTags when you initialize the SDK. For the bundled workflow it is whichever values-xx folders you pulled before the release.',
-    },
-    {
-      question: 'Do I need a Tolgee API key inside the app?',
-      answer:
-        'No. The app only uses the public Content Delivery URL prefix. API keys are used by the Tolgee CLI on your machine or in CI and must never be committed or shipped in an APK.',
-    },
-  ]}
-/>
 
 ## Next steps
 

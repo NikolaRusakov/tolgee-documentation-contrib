@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android, migration, strings.xml, getString, plurals, stringResource, over the air]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK can take over an existing Android app one lookup pattern at a time. This guide is for developers
 migrating an app with hundreds of `getString` calls, layouts, plurals, arrays and Compose
 `stringResource` calls. You inventory every pattern with a few grep commands, apply one change per pattern, and verify.
@@ -216,33 +214,6 @@ Done means: the four checks above pass and the exception list from step 6 is wri
 | Placeholders appear literally (`%1$s`) | Delivery exported with ICU placeholders while the SDK uses Sprintf | Export the delivery with Android placeholders, or set `formatter(Tolgee.Formatter.ICU)` |
 | Key exists on the platform but bundled text is shown | Key name differs (renamed resource, namespace) | Keep names identical; check `resources.getResourceEntryName(id)` |
 | Crash `IllegalArgumentException: Only indexed or none parameters are supported` | `TolgeeMessageParams.Mapped` used with Sprintf | Use positional arguments, or switch to ICU |
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Do I have to migrate the whole app at once?',
-      answer:
-        'No. Each pattern is independent and the bundled resource remains the fallback, so the app can ship with some screens migrated and others not.',
-    },
-    {
-      question: 'Do key names in Tolgee have to match the resource names?',
-      answer:
-        'Yes. Tolgee Android SDK looks a string up by its resource entry name, so R.string.welcome_message is the key welcome_message. Pushing strings.xml with the Tolgee CLI keeps them identical.',
-    },
-    {
-      question: 'Can I delete the values-xx folders after migrating?',
-      answer:
-        'No. They are the offline fallback and the text shown before the first CDN response. Keep them and run tolgee pull before releases if they should match the platform.',
-    },
-    {
-      question: 'What cannot be delivered over the air?',
-      answer:
-        'The app label and other strings rendered by the OS from the manifest, strings marked translatable=false, strings needed before Tolgee.init runs, namespaced keys, and strings with two plural expressions.',
-    },
-  ]}
-/>
 
 ## Next steps
 

@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android, api reference, dokka, kdoc, markdown, llms.txt]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK publishes its full API reference, generated from KDoc, on GitHub Pages, with a Markdown copy of every
 page. This page is the map for developers who need to find a class or member quickly: it
 lists what exists in the `core` and `compose` modules with abbreviated signatures and links into the generated
@@ -130,33 +128,6 @@ Compose Multiplatform `Res` objects, plus `Locale` helpers. Every overload is li
 
 Published as `io.tolgee.mobile-kotlin-sdk:gradle-plugin`, but the compiler plugin it configures is disabled in the
 current release; do not add it to consumer builds.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Where is the complete Tolgee Android SDK API reference?',
-      answer:
-        'At tolgee.github.io/tolgee-mobile-kotlin-sdk, generated from KDoc on every release, with a Markdown twin of every page and an llms.txt index for coding agents.',
-    },
-    {
-      question: 'How do I check whether a member exists in my SDK version?',
-      answer:
-        'Open the binary API dump for the module, core.api or compose.api, at the release tag in the repository. A signature that is absent there does not exist in that release.',
-    },
-    {
-      question: 'What is the difference between Tolgee.instance and TolgeeAndroid?',
-      answer:
-        'Tolgee.instance is the singleton created by Tolgee.init. On Android it is a TolgeeAndroid, which adds the overloads that take resource ids, preload with a lifecycle owner, and retranslate.',
-    },
-    {
-      question: 'Which formatter do I need for named parameters?',
-      answer:
-        'Tolgee.Formatter.ICU. The default Sprintf formatter accepts positional arguments only, and TolgeeMessageParams.Mapped throws with it.',
-    },
-  ]}
-/>
 
 ## Next steps
 

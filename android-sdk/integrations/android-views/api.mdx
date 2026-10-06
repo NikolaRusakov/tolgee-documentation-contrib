@@ -7,8 +7,6 @@ image: /img/og-images/android-views.png
 keywords: [tolgee, android views, api, TolgeeAndroid, TolgeeContextWrapper, tFlow, tPlural, getStringT, TolgeeStorageProviderAndroid]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 `Tolgee.instance` on Android is a `TolgeeAndroid`, the class in the `core` artifact that adds resource-id overloads,
 lifecycle-aware preloading and layout re-translation to the common `Tolgee` API. This page lists that Android surface
 for developers writing Views code: the instance methods, the context wrapper, the extension functions for contexts that
@@ -87,33 +85,6 @@ with an empty directory. Nothing is set by default; pass it as `storage` in `con
 `Tolgee.ChangeListener` has one method, `onTranslationsChanged()`, called on the main thread after each load.
 `addChangeListener` and `removeChangeListener` on the instance register it, for Java code or classes without a
 coroutine scope. `changeFlow` is the coroutine form.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Is Tolgee.instance always a TolgeeAndroid?',
-      answer:
-        'On Android, yes. The common Tolgee.init creates the platform type, which on Android is TolgeeAndroid with the resource-id overloads.',
-    },
-    {
-      question: 'Does tFlow need the Activity context?',
-      answer:
-        'Any Context works; it is used to read the resource entry name and the bundled fallback. The application context is fine for text that outlives a screen.',
-    },
-    {
-      question: 'What does retranslate not update?',
-      answer:
-        'Text you set from code, and layout strings with placeholders that the inflater skipped. Use tFlow or the bindTolgee helper for those.',
-    },
-    {
-      question: 'Where are the full signatures and KDoc?',
-      answer:
-        'In the generated reference at tolgee.github.io/tolgee-mobile-kotlin-sdk; the TolgeeAndroid page lists every overload with the platforms it exists on.',
-    },
-  ]}
-/>
 
 ## Next steps
 

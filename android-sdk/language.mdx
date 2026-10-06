@@ -7,8 +7,6 @@ image: /img/og-images/android-sdk.png
 keywords: [tolgee, android sdk, locale, language, setLocale, fallback, bcp 47, availableLocaleTags, defaultLanguage, manifest]
 ---
 
-import FaqSection from '@site/src/component/docs/FaqSection';
-
 Tolgee Android SDK resolves the language to load in three steps: the requested locale, the device locale by default,
 is matched against the published languages, progressively shortened until one matches (`zh-Hans-CN` → `zh-Hans` →
 `zh`), and finally replaced by `defaultLanguage`. This page is for anyone configuring languages or debugging why a
@@ -102,33 +100,6 @@ val active = Tolgee.instance.getLocale().toTag("-")
 Publish it in the Content Delivery and add it to `availableLocaleTags`, or switch to a `manifest.json` on a custom CDN
 so the list is not hard-coded. The bundled fallback for a new language is the default `values/strings.xml` until you
 add a `values-xx` folder with `tolgee pull`.
-
-## Frequently asked questions
-
-<FaqSection
-  items={[
-    {
-      question: 'Why does my app load English on a Czech device?',
-      answer:
-        'Either cs is not published in the Content Delivery, or it is missing from availableLocaleTags so fallback resolved to defaultLanguage. Publish it and list it.',
-    },
-    {
-      question: 'Does Tolgee Android SDK change the Android configuration locale?',
-      answer:
-        'No. It only changes which translations it serves. Date, number and resource-qualifier behaviour of the platform stays with the system locale unless your app changes it separately.',
-    },
-    {
-      question: 'What if I omit availableLocaleTags?',
-      answer:
-        'Fallback is disabled unless the Content Delivery serves a manifest.json. A device locale with a region, such as en-US, then requests a file that does not exist and the app shows bundled text.',
-    },
-    {
-      question: 'Is the language choice shared between Views and Compose screens?',
-      answer:
-        'Yes. The locale belongs to the Tolgee instance, which is one per process. A switch made in a Compose screen is visible to every Activity.',
-    },
-  ]}
-/>
 
 ## Next steps
 
